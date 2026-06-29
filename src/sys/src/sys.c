@@ -308,7 +308,13 @@ static void Sys_SigInit(void) {
 //=============================================================================
 
 
+// Desktop builds happily grab 256 MB. PS3 has only 256 MB of main RAM
+// (shared with the OS and SDL2/RSX framebuffer), so cap the heap lower.
+#ifdef CHOCOLATE_QUAKE_PS3
+#define DEFAULT_MEMORY (128 * 1024 * 1024)
+#else
 #define DEFAULT_MEMORY (256 * 1024 * 1024)
+#endif
 
 static char* Sys_GetDefaultBaseDir(void) {
 #ifdef _WIN32
