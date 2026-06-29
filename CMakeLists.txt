@@ -39,8 +39,10 @@ if(CHOCOLATE_QUAKE_PS3)
 	# Codec headers (vorbis/vorbisfile.h, mad.h, FLAC/stream_decoder.h) all
 	# live in the ps3dev portlibs include dir; expose it globally so the
 	# find_library calls below (which only resolve .a paths) don't need
-	# per-target include wiring.
-	include_directories("${PS3DEV}/portlibs/ppu/include")
+	# per-target include wiring. The ppu/include dir holds the PSL1GHT SDK
+	# headers (sysutil/sysutil.h, etc.) which also aren't on the compiler's
+	# default search path.
+	include_directories("${PS3DEV}/portlibs/ppu/include" "${PS3DEV}/ppu/include")
 
 	find_library(VORBIS_LIBRARY vorbis REQUIRED)
 	find_library(VORBISFILE_LIBRARY vorbisfile REQUIRED)

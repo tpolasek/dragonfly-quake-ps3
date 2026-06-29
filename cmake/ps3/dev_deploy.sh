@@ -39,48 +39,55 @@ command -v docker >/dev/null || {
     exit 1
 }
 
-# --- build, sign, upload -- all inside the container --------------------------
-# We mount the repo so the container can rebuild and read the binary, and
-# pass our config in via env vars so the in-container script can use them.
-DOCKER=(docker run --rm --platform linux/amd64
-    -v "$REPO_ROOT:/build" -w /build
-    -e PS3_FTP_HOST -e PS3_FTP_USER -e PS3_FTP_PASS
-    -e PS3_INSTALL_DIR -e CONTENT_ID -e LOCAL_ELF
-    hldtux/ps3dev-sdl2)
+# --- write the in-container script --------------------------------------------
+# We do everything (build + sign + upload) in ONE container invocation so
+# intermediate files (/tmp/EBOOT.BIN) survive between steps. Write the
+# script to a host file and mount it read-only into the container.
+IN_CONTAINER_SCRIPT="$(mktemp /tmp/cq_deploy.XXXXXX.sh)"
+trap 'rm -f "$IN_CONTAINER_SCRIPT"' EXIT
 
-if [ "$(id -nG "$USER" | tr ' ' '\n' | grep -cx docker)" -eq 0 ] && \
-   [ "$(id -u)" -ne 0 ]; then
-    # Not in docker group and not root: wrap with sg.
-    DOCKER=(sg docker -c "${DOCKER[*]}")
-fi
+# Substitution happens here on the HOST so the container sees the final
+# values directly. Use ${var@Q} to safely quote each value into the script.
+cat > "$IN_CONTAINER_SCRIPT" <<EOF
+set -euo pipefail
+export PATH=/usr/local/ps3dev/ppu/bin:/usr/local/ps3dev/bin:\$PATH
 
 echo "[1/3] Rebuilding PPU binary"
-"${DOCKER[@]}" bash -c '
-    set -e
-    export PATH=/usr/local/ps3dev/ppu/bin:/usr/local/ps3dev/bin:$PATH
-    cmake --build build-ps3 -j"$(nproc)" 2>&1 | tail -3
-'
+cmake --build build-ps3 -j"\$(nproc)" 2>&1 | tail -3
 
 echo "[2/3] Signing EBOOT.BIN (ppu-strip + sprxlinker + make_self_npdrm)"
-"${DOCKER[@]}" bash -c '
-    set -e
-    export PATH=/usr/local/ps3dev/ppu/bin:/usr/local/ps3dev/bin:$PATH
-    rm -f /tmp/cq.elf /tmp/EBOOT.BIN
-    ppu-strip -o /tmp/cq.elf "$LOCAL_ELF"
-    sprxlinker /tmp/cq.elf
-    make_self_npdrm /tmp/cq.elf /tmp/EBOOT.BIN "$CONTENT_ID"
-    echo "  -> /tmp/EBOOT.BIN ($(stat -c%s /tmp/EBOOT.BIN) bytes)"
-'
+rm -f /tmp/cq.elf /tmp/EBOOT.BIN
+ppu-strip -o /tmp/cq.elf ${LOCAL_ELF@Q}
+sprxlinker /tmp/cq.elf
+make_self_npdrm /tmp/cq.elf /tmp/EBOOT.BIN ${CONTENT_ID@Q}
+ls -la /tmp/EBOOT.BIN
 
-echo "[3/3] Uploading to ftp://$PS3_FTP_HOST$PS3_INSTALL_DIR/EBOOT.BIN"
-"${DOCKER[@]}" bash -c "
-    set -e
-    curl --connect-timeout 10 --max-time 120 --ftp-pasv \
-        -T /tmp/EBOOT.BIN \
-        --user \"$PS3_FTP_USER:$PS3_FTP_PASS\" \
-        \"ftp://$PS3_FTP_HOST$PS3_INSTALL_DIR/EBOOT.BIN\"
-"
+echo "[3/3] Uploading to ftp://${PS3_FTP_HOST}${PS3_INSTALL_DIR}/EBOOT.BIN"
+curl --connect-timeout 10 --max-time 120 --ftp-pasv \\
+    -T /tmp/EBOOT.BIN \\
+    --user ${PS3_FTP_USER@Q}:${PS3_FTP_PASS@Q} \\
+    "ftp://${PS3_FTP_HOST}${PS3_INSTALL_DIR}/EBOOT.BIN"
+echo "Upload OK."
+EOF
+chmod +x "$IN_CONTAINER_SCRIPT"
 
-echo
-echo "Deployed. Relaunch Chocolate Quake from the XMB to test."
-echo "Log will be at: ftp://$PS3_FTP_HOST$PS3_INSTALL_DIR/chocolate-quake.log"
+# --- run it in docker ---------------------------------------------------------
+# --network host so the container can reach the PS3 on the LAN without
+# bridge-NAT complications (the default bridge usually works, but host
+# networking removes a variable when debugging FTP issues).
+DOCKER_CMD=(docker run --rm --platform linux/amd64
+    --network host
+    -v "$REPO_ROOT:/build" -w /build
+    -v "$IN_CONTAINER_SCRIPT:/deploy.sh:ro"
+    hldtux/ps3dev-sdl2
+    bash /deploy.sh)
+
+if docker version >/dev/null 2>&1; then
+    "${DOCKER_CMD[@]}"
+else
+    # User's effective gid set doesn't include docker yet (no re-login since
+    # usermod). Wrap the whole command with sg so the supplementary group is
+    # active for this invocation only. printf %q re-quotes each argv element
+    # so the string can be re-evaluated by sg's inner bash without surprises.
+    exec sg docker -c "$(printf '%q ' "${DOCKER_CMD[@]}")"
+fi

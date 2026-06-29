@@ -23,6 +23,10 @@
 #include "sys.h"
 #include <SDL_main.h>
 
+#ifdef CHOCOLATE_QUAKE_PS3
+#include <unistd.h>
+#endif
+
 
 int main(int argc, char* argv[]) {
     printf("Host_Init\n");
@@ -31,6 +35,14 @@ int main(int argc, char* argv[]) {
 
     double old_time = Sys_FloatTime();
     while (true) {
+#ifdef CHOCOLATE_QUAKE_PS3
+        // PS3: if the XMB overlay is open (PS button), park the loop so
+        // we don't fight the OS for the framebuffer or waste CPU.
+        if (Sys_XmbMenuOpen()) {
+            usleep(16000);
+            continue;
+        }
+#endif
         double new_time = Sys_FloatTime();
         double dt = new_time - old_time;
         Host_Frame((float) dt);

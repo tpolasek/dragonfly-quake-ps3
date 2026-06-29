@@ -38,6 +38,18 @@
 #include <string.h>
 #include <unistd.h>
 
+#ifdef CHOCOLATE_QUAKE_PS3
+// PS3 sysutil API: lets us intercept the PS button (XMB overlay open/close)
+// and the "Quit Game" XMB command so the OS doesn't yank the rug out from
+// under us mid-frame.
+#include <sysutil/sysutil.h>
+
+// Forward declarations -- the helpers themselves live further down but
+// Sys_Error / Sys_Quit reference them.
+static void Sys_OpenLog(void);
+static void Sys_FlushLog(void);
+#endif
+
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
 #endif
@@ -171,9 +183,13 @@ void Sys_Error(char* error, ...) {
     va_end(argptr);
 
     fflush(stdout);
-    fprintf(stderr, "Error: %s\n", string);
 #ifdef CHOCOLATE_QUAKE_PS3
+    // stdout is redirected to the log file; route the error there so we
+    // can read it back over FTP after the crash.
+    fprintf(stdout, "Error: %s\n", string);
     Sys_FlushLog();
+#else
+    fprintf(stderr, "Error: %s\n", string);
 #endif
     Sys_ShowErrorModal(string);
 
@@ -331,24 +347,58 @@ static void Sys_SigInit(void) {
 #define PS3_LOG_PATH "/dev_hdd0/game/CHQK00001/USRDIR/chocolate-quake.log"
 
 static void Sys_OpenLog(void) {
-    FILE* f = fopen(PS3_LOG_PATH, "w");
-    if (!f) {
+    // PS3 newlib has no dup2, so we redirect stdout to the log file via
+    // freopen (any printf / Sys_Printf output lands here automatically).
+    // Sys_Error writes to stdout rather than stderr so its output is
+    // captured too.
+    if (!freopen(PS3_LOG_PATH, "w", stdout)) {
         return;
     }
-    int fd = fileno(f);
-    // Redirect both stdout and stderr to the log file.
-    dup2(fd, STDOUT_FILENO);
-    dup2(fd, STDERR_FILENO);
     // Line-buffered so partial lines flush at every newline; if the game
     // hard-crashes mid-line we still get the previous lines.
     setvbuf(stdout, NULL, _IOLBF, 0);
-    setvbuf(stderr, NULL, _IOLBF, 0);
-    fprintf(stderr, "=== chocolate-quake PS3 log start ===\n");
+    fprintf(stdout, "=== chocolate-quake PS3 log start ===\n");
 }
 
 static void Sys_FlushLog(void) {
     fflush(stdout);
     fflush(stderr);
+}
+
+// XMB overlay state. Set by the sysutil callback (fired from
+// sysUtilCheckCallback, called on the main thread by Sys_XmbMenuOpen).
+// Volatile because the callback runs in the same thread but we want the
+// value to be re-read each loop iteration.
+static volatile qboolean xmb_menu_open = false;
+
+static void Sys_SysutilCallback(u64 status, u64 param, void* userdata) {
+    (void)param;
+    (void)userdata;
+    switch (status) {
+        case SYSUTIL_DRAW_BEGIN:
+            // PS button was pressed; XMB overlay is opening. Suspend
+            // rendering and game updates until SYSUTIL_DRAW_END.
+            xmb_menu_open = true;
+            break;
+        case SYSUTIL_DRAW_END:
+            // User closed the XMB; return to the game.
+            xmb_menu_open = false;
+            break;
+        case SYSUTIL_EXIT_GAME:
+            // User picked "Quit Game" from the XMB.
+            fprintf(stderr, "SYSUTIL_EXIT_GAME received -- exiting\n");
+            Sys_FlushLog();
+            Host_Shutdown();
+            exit(0);
+        default:
+            break;
+    }
+}
+
+qboolean Sys_XmbMenuOpen(void) {
+    // Pump sysutil events so the callback above fires.
+    sysUtilCheckCallback();
+    return xmb_menu_open;
 }
 #endif
 
@@ -403,6 +453,11 @@ quakeparms_t* Sys_Init(i32 argc, char* argv[]) {
     // Open the log file before anything else can fail, so we capture
     // startup messages and any Sys_Error output.
     Sys_OpenLog();
+    // Register the sysutil callback so we see PS button (XMB open/close)
+    // and "Quit Game" events. Slot 0 is fine -- we're the only consumer.
+    if (sysUtilRegisterCallback(0, Sys_SysutilCallback, NULL) != 0) {
+        fprintf(stderr, "sysUtilRegisterCallback failed\n");
+    }
 #endif
 #ifdef HAVE_SIGNAL_H
     Sys_SigInit();

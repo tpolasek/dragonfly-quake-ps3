@@ -81,6 +81,12 @@ void Sys_LowFPPrecision(void);
 
 void Sys_HighFPPrecision(void);
 
+// PS3 only: returns true while the XMB overlay is open (PS button pressed).
+// Calls sysUtilCheckCallback internally so the sysutil callback fires on the
+// calling thread. On non-PS3 builds this is always false and the call is a
+// no-op, so the main loop stays unchanged.
+qboolean Sys_XmbMenuOpen(void);
+
 quakeparms_t* Sys_Init(i32 argc, char* argv[]);
 
 #endif
