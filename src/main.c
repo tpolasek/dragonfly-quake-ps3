@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
     g_game_argv = argv;
     s32 rc = sysThreadCreate(&g_game_thread_id, Quake_GameThread, NULL,
                              PS3_GAME_PRIO, PS3_GAME_STACK,
-                             0, "quake_game");
+                             THREAD_JOINABLE, "quake_game");
     if (rc != 0) {
         // Cannot use SYS_TRACE here -- Sys_OpenLog hasn't run yet (it
         // runs inside Sys_Init on the worker thread). Last-resort
@@ -102,23 +102,10 @@ int main(int argc, char* argv[]) {
         fprintf(stderr, "sysThreadCreate failed: %d\n", (int) rc);
         return 1;
     }
-    // NOTE: We deliberately do NOT join the worker thread. When the game
-    // freezes (the whole reason we're debugging), joining would block
-    // forever and force a hard console reboot. Instead, sleep a fixed
-    // watchdog timeout and then terminate the process -- the OS reaps
-    // the still-running worker thread. The PS-button XMB exit path
-    // (sysProcessExit from the sysutil callback) still fires immediately
-    // and bypasses this sleep.
-#define PS3_WATCHDOG_SECONDS  30
-    usleep(PS3_WATCHDOG_SECONDS * 1000 * 1000);
-    // Disambiguator: this fires only when the worker thread has not exited on
-    // its own within the watchdog window. If this is the last line of the log,
-    // the game is in a true hang (renderer/audio spin or hard lockup), NOT a
-    // Sys_Error crash (those print "Error:" first).
-    SYS_TRACE("[watchdog] fired after %d s timeout -- true hang, not a crash\n",
-              PS3_WATCHDOG_SECONDS);
+    u64 exit_code = 0;
+    sysThreadJoin(g_game_thread_id, &exit_code);
     sysProcessExit(1);
-    return 1; // unreachable
+    return (int) exit_code;
 #else
     quakeparms_t* parms = Sys_Init(argc, argv);
     Host_Init(parms);
