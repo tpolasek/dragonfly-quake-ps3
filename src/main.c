@@ -29,9 +29,11 @@
 
 
 int main(int argc, char* argv[]) {
-    printf("Host_Init\n");
     quakeparms_t* parms = Sys_Init(argc, argv);
+    SYS_TRACE("main: Sys_Init returned (parms=%p), calling Host_Init\n",
+              (void*) parms);
     Host_Init(parms);
+    SYS_TRACE("main: Host_Init returned, entering frame loop\n");
 
     double old_time = Sys_FloatTime();
     while (true) {

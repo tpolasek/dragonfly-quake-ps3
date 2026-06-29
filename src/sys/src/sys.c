@@ -205,6 +205,19 @@ void Sys_Printf(char* fmt, ...) {
     va_end(argptr);
 }
 
+#ifdef CHOCOLATE_QUAKE_PS3
+// Backing for the SYS_TRACE macro declared in sys.h. Unbuffered fprintf +
+// fflush so we get every step in the log even if the process is killed
+// mid-startup before the next newline would have flushed.
+void Sys_Trace(const char* fmt, ...) {
+    va_list argptr;
+    va_start(argptr, fmt);
+    vfprintf(stdout, fmt, argptr);
+    va_end(argptr);
+    fflush(stdout);
+}
+#endif
+
 void Sys_Quit(void) {
     Host_Shutdown();
 #ifdef CHOCOLATE_QUAKE_PS3
@@ -407,21 +420,13 @@ static char* Sys_GetDefaultBaseDir(void) {
     return ".";
 #elif defined(CHOCOLATE_QUAKE_PS3)
     // On PS3, the .pkg ships id1/ next to EBOOT.BIN under the title's
-    // USRDIR (e.g. /dev_hdd0/game/<TITLE_ID>/USRDIR/). SDL_GetBasePath()
-    // returns the executable's directory on PSL1GHT, which is exactly
-    // where we want to look. SDL_GetPrefPath() would point us at a
-    // per-title savedata dir that has no game data.
-    static char base_dir[MAX_OSPATH] = {0};
-    if (base_dir[0]) {
-        return base_dir;
-    }
-    char* path = SDL_GetBasePath();
-    if (path) {
-        Q_strncpy(base_dir, path, MAX_OSPATH);
-        SDL_free(path);
-        return base_dir;
-    }
-    return ".";
+    // USRDIR (e.g. /dev_hdd0/game/<TITLE_ID>/USRDIR/). The PSL1GHT SDL2
+    // build returns NULL from SDL_GetBasePath(), so we hardcode the
+    // title's USRDIR -- that's where make_pkg.sh installs id1/ alongside
+    // EBOOT.BIN.
+    #define PS3_BASE_DIR "/dev_hdd0/game/CHQK00001/USRDIR"
+    SYS_TRACE("Sys_GetDefaultBaseDir: PS3 hardcoding '%s'\n", PS3_BASE_DIR);
+    return PS3_BASE_DIR;
 #else
     static char base_dir[MAX_OSPATH] = {0};
     if (base_dir[0]) {
@@ -437,14 +442,28 @@ static char* Sys_GetDefaultBaseDir(void) {
 static quakeparms_t* Sys_InitParms(i32 argc, char** argv) {
     static quakeparms_t parms;
 
+    SYS_TRACE("Sys_InitParms: enter (DEFAULT_MEMORY=%u)\n",
+              (unsigned) DEFAULT_MEMORY);
     parms.memsize = DEFAULT_MEMORY;
+    SYS_TRACE("Sys_InitParms: calling Q_malloc(%u)\n",
+              (unsigned) parms.memsize);
     parms.membase = Q_malloc(parms.memsize);
+    SYS_TRACE("Sys_InitParms: Q_malloc returned %p\n", (void*) parms.membase);
+    if (!parms.membase) {
+        SYS_TRACE("Sys_InitParms: heap allocation FAILED\n");
+    }
+    SYS_TRACE("Sys_InitParms: calling Sys_GetDefaultBaseDir\n");
     parms.basedir = Sys_GetDefaultBaseDir();
+    SYS_TRACE("Sys_InitParms: basedir='%s'\n",
+              parms.basedir ? parms.basedir : "(null)");
 
+    SYS_TRACE("Sys_InitParms: calling COM_InitArgv\n");
     COM_InitArgv(argc, argv);
+    SYS_TRACE("Sys_InitParms: COM_InitArgv done, com_argc=%d\n", com_argc);
     parms.argc = com_argc;
     parms.argv = com_argv;
 
+    SYS_TRACE("Sys_InitParms: done\n");
     return &parms;
 }
 
@@ -452,15 +471,23 @@ quakeparms_t* Sys_Init(i32 argc, char* argv[]) {
 #ifdef CHOCOLATE_QUAKE_PS3
     // Open the log file before anything else can fail, so we capture
     // startup messages and any Sys_Error output.
+    SYS_TRACE("Sys_Init: opening log\n");
     Sys_OpenLog();
+    SYS_TRACE("Sys_Init: log open, registering sysutil callback\n");
     // Register the sysutil callback so we see PS button (XMB open/close)
     // and "Quit Game" events. Slot 0 is fine -- we're the only consumer.
     if (sysUtilRegisterCallback(0, Sys_SysutilCallback, NULL) != 0) {
         fprintf(stderr, "sysUtilRegisterCallback failed\n");
     }
+    SYS_TRACE("Sys_Init: sysutil callback registered\n");
 #endif
 #ifdef HAVE_SIGNAL_H
+    SYS_TRACE("Sys_Init: calling Sys_SigInit\n");
     Sys_SigInit();
+    SYS_TRACE("Sys_Init: signals set up\n");
 #endif
-    return Sys_InitParms(argc, argv);
+    SYS_TRACE("Sys_Init: calling Sys_InitParms\n");
+    quakeparms_t* parms = Sys_InitParms(argc, argv);
+    SYS_TRACE("Sys_Init: returning parms=%p\n", (void*) parms);
+    return parms;
 }

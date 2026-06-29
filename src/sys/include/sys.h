@@ -87,6 +87,17 @@ void Sys_HighFPPrecision(void);
 // no-op, so the main loop stays unchanged.
 qboolean Sys_XmbMenuOpen(void);
 
+// PS3-only startup tracing. Writes immediately (fprintf + fflush) to the log
+// file opened by Sys_OpenLog, so we capture the last successful step even if
+// the process hard-crashes mid-startup. Compiles to nothing elsewhere so
+// desktop builds stay quiet.
+#ifdef CHOCOLATE_QUAKE_PS3
+void Sys_Trace(const char* fmt, ...);
+#define SYS_TRACE(...) Sys_Trace("[trace] " __VA_ARGS__)
+#else
+#define SYS_TRACE(...) ((void)0)
+#endif
+
 quakeparms_t* Sys_Init(i32 argc, char* argv[]);
 
 #endif

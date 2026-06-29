@@ -549,14 +549,26 @@ of the list so they override previous pack files.
 */
 static pack_t* COM_LoadPackFile(char* packfile) {
     dpackheader_t header;
-    dpackfile_t info[MAX_FILES_IN_PACK];
+    // dpackfile_t is 64 bytes and MAX_FILES_IN_PACK is 2048 -> 128 KB.
+    // PS3 main-thread stack is only ~128 KB so a stack array this large
+    // blows the stack on function entry (silent crash before the first
+    // line of the function body). Static is safe here: COM_LoadPackFile
+    // runs only during COM_Init, which is single-threaded.
+    static dpackfile_t info[MAX_FILES_IN_PACK];
     i32 packhandle;
 
-    if (Sys_FileOpenRead(packfile, &packhandle) == -1) {
+    SYS_TRACE("COM_LoadPackFile: opening '%s'\n", packfile);
+    i32 open_size = Sys_FileOpenRead(packfile, &packhandle);
+    SYS_TRACE("COM_LoadPackFile: Sys_FileOpenRead size=%d handle=%d\n",
+              open_size, packhandle);
+    if (open_size == -1) {
         // Con_Printf("Couldn't open %s\n", packfile);
         return NULL;
     }
     Sys_FileRead(packhandle, (void*) &header, sizeof(header));
+    SYS_TRACE("COM_LoadPackFile: header id='%c%c%c%c' dirofs=%u dirlen=%u\n",
+              header.id[0], header.id[1], header.id[2], header.id[3],
+              (unsigned) header.dirofs, (unsigned) header.dirlen);
     if (Q_strncmp(header.id, "PACK", 4)) {
         Sys_Error("%s is not a packfile", packfile);
     }
@@ -564,6 +576,7 @@ static pack_t* COM_LoadPackFile(char* packfile) {
     header.dirlen = LittleLong(header.dirlen);
 
     i32 numpackfiles = header.dirlen / sizeof(dpackfile_t);
+    SYS_TRACE("COM_LoadPackFile: numpackfiles=%d\n", numpackfiles);
     if (numpackfiles > MAX_FILES_IN_PACK) {
         Sys_Error("%s has %i files", packfile, numpackfiles);
     }
@@ -599,6 +612,8 @@ static pack_t* COM_LoadPackFile(char* packfile) {
     pack->numfiles = numpackfiles;
     pack->files = newfiles;
 
+    SYS_TRACE("COM_LoadPackFile: loaded %i files from %s\n",
+              numpackfiles, packfile);
     Con_Printf("Added packfile %s (%i files)\n", packfile, numpackfiles);
     return pack;
 }
@@ -633,6 +648,8 @@ static char* COM_GetBaseDir(void) {
     if (j > 0 && ((basedir[j - 1] == '\\') || (basedir[j - 1] == '/'))) {
         basedir[j - 1] = 0;
     }
+    SYS_TRACE("COM_GetBaseDir: returning '%s' (host_parms.basedir='%s')\n",
+              basedir, host_parms.basedir ? host_parms.basedir : "(null)");
     return basedir;
 }
 
@@ -647,6 +664,7 @@ then loads and adds pak1.pak, pak2.pak, ...
 static void COM_AddGameDirectory(char* dir) {
     char pakfile[MAX_OSPATH];
 
+    SYS_TRACE("COM_AddGameDirectory: enter (dir='%s')\n", dir);
     Q_strcpy(com_gamedir, dir);
 
     //
@@ -662,8 +680,10 @@ static void COM_AddGameDirectory(char* dir) {
     //
     for (i32 i = 0;; i++) {
         sprintf(pakfile, "%s/pak%i.pak", dir, i);
+        SYS_TRACE("COM_AddGameDirectory: trying '%s'\n", pakfile);
         pack_t* pak = COM_LoadPackFile(pakfile);
         if (!pak) {
+            SYS_TRACE("COM_AddGameDirectory: no more pak files at i=%d\n", i);
             break;
         }
         search = Hunk_Alloc(sizeof(*search));
@@ -671,15 +691,20 @@ static void COM_AddGameDirectory(char* dir) {
         search->next = com_searchpaths;
         com_searchpaths = search;
     }
+    SYS_TRACE("COM_AddGameDirectory: done (dir='%s')\n", dir);
 }
 
 static void COM_AddGameDirs(void) {
+    SYS_TRACE("COM_AddGameDirs: enter\n");
     char* basedir = COM_GetBaseDir();
+    SYS_TRACE("COM_AddGameDirs: basedir='%s'\n", basedir);
 
     //
     // start up with GAMENAME by default (id1)
     //
+    SYS_TRACE("COM_AddGameDirs: adding '%s/%s'\n", basedir, GAMENAME);
     COM_AddGameDirectory(va("%s/" GAMENAME, basedir));
+    SYS_TRACE("COM_AddGameDirs: id1 added\n");
     if (COM_CheckParm("-rogue")) {
         COM_AddGameDirectory(va("%s/rogue", basedir));
     }
@@ -696,6 +721,7 @@ static void COM_AddGameDirs(void) {
         com_modified = true;
         COM_AddGameDirectory(va("%s/%s", basedir, com_argv[i + 1]));
     }
+    SYS_TRACE("COM_AddGameDirs: done\n");
 }
 
 static void COM_SetCacheDir(void) {
@@ -749,8 +775,11 @@ COM_InitFilesystem
 ================
 */
 void COM_InitFilesystem(void) {
+    SYS_TRACE("COM_InitFilesystem: enter\n");
     COM_AddGameDirs();
+    SYS_TRACE("COM_InitFilesystem: COM_SetCacheDir\n");
     COM_SetCacheDir();
+    SYS_TRACE("COM_InitFilesystem: cache dir set\n");
 
     //
     // -path <dir or packfile> [<dir or packfile>] ...

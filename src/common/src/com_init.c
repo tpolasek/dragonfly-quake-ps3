@@ -98,12 +98,20 @@ COM_Init
 ================
 */
 void COM_Init(char* basedir) {
+    SYS_TRACE("COM_Init: enter (basedir='%s')\n",
+              basedir ? basedir : "(null)");
+    SYS_TRACE("COM_Init: COM_InitByteSwap\n");
     COM_InitByteSwap();
-
+    SYS_TRACE("COM_Init: Cvar_RegisterVariable(registered)\n");
     Cvar_RegisterVariable(&registered);
+    SYS_TRACE("COM_Init: Cvar_RegisterVariable(cmdline)\n");
     Cvar_RegisterVariable(&cmdline);
+    SYS_TRACE("COM_Init: Cmd_AddCommand(path)\n");
     Cmd_AddCommand("path", COM_Path_f);
 
+    SYS_TRACE("COM_Init: COM_InitFilesystem\n");
     COM_InitFilesystem();
+    SYS_TRACE("COM_Init: COM_CheckRegistered\n");
     COM_CheckRegistered();
+    SYS_TRACE("COM_Init: done\n");
 }

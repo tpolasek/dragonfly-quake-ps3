@@ -776,6 +776,9 @@ Host_Init
 ====================
 */
 void Host_Init(quakeparms_t* parms) {
+    SYS_TRACE("Host_Init: enter (parms=%p memsize=%u basedir='%s')\n",
+              (void*) parms, (unsigned) parms->memsize,
+              parms->basedir ? parms->basedir : "(null)");
     if (standard_quake)
         minimum_memory = MINIMUM_MEMORY;
     else
@@ -793,55 +796,86 @@ void Host_Init(quakeparms_t* parms) {
     com_argc = parms->argc;
     com_argv = parms->argv;
 
+    SYS_TRACE("Host_Init: Host_InitTimer\n");
     Host_InitTimer();
+    SYS_TRACE("Host_Init: Memory_Init\n");
     Memory_Init(parms->membase, parms->memsize);
+    SYS_TRACE("Host_Init: Cbuf_Init\n");
     Cbuf_Init();
+    SYS_TRACE("Host_Init: Cmd_Init\n");
     Cmd_Init();
+    SYS_TRACE("Host_Init: V_Init\n");
     V_Init();
+    SYS_TRACE("Host_Init: Chase_Init\n");
     Chase_Init();
+    SYS_TRACE("Host_Init: Host_InitVCR\n");
     Host_InitVCR(parms);
+    SYS_TRACE("Host_Init: COM_Init(basedir='%s')\n", parms->basedir);
     COM_Init(parms->basedir);
+    SYS_TRACE("Host_Init: Host_InitLocal\n");
     Host_InitLocal();
+    SYS_TRACE("Host_Init: W_LoadWadFile gfx.wad\n");
     W_LoadWadFile("gfx.wad");
+    SYS_TRACE("Host_Init: Key_Init\n");
     Key_Init();
+    SYS_TRACE("Host_Init: Con_Init\n");
     Con_Init();
+    SYS_TRACE("Host_Init: M_Init\n");
     M_Init();
+    SYS_TRACE("Host_Init: PR_Init\n");
     PR_Init();
+    SYS_TRACE("Host_Init: Mod_Init\n");
     Mod_Init();
+    SYS_TRACE("Host_Init: NET_Init\n");
     NET_Init();
+    SYS_TRACE("Host_Init: SV_Init\n");
     SV_Init();
 
     Con_Printf("Exe: " __TIME__ " " __DATE__ "\n");
     Con_Printf("%4.1f megabyte heap\n", parms->memsize / (1024 * 1024.0));
 
+    SYS_TRACE("Host_Init: R_InitTextures\n");
     R_InitTextures(); // needed even for dedicated servers
 
     if (cls.state != ca_dedicated) {
+        SYS_TRACE("Host_Init: loading gfx/palette.lmp\n");
         host_basepal = (byte*) COM_LoadHunkFile("gfx/palette.lmp");
         if (!host_basepal)
             Sys_Error("Couldn't load gfx/palette.lmp");
+        SYS_TRACE("Host_Init: loading gfx/colormap.lmp\n");
         host_colormap = (byte*) COM_LoadHunkFile("gfx/colormap.lmp");
         if (!host_colormap)
             Sys_Error("Couldn't load gfx/colormap.lmp");
 
+        SYS_TRACE("Host_Init: VID_Init\n");
         VID_Init(host_basepal);
+        SYS_TRACE("Host_Init: IN_Init\n");
         IN_Init();
+        SYS_TRACE("Host_Init: Draw_Init\n");
         Draw_Init();
+        SYS_TRACE("Host_Init: SCR_Init\n");
         SCR_Init();
+        SYS_TRACE("Host_Init: R_Init\n");
         R_Init();
+        SYS_TRACE("Host_Init: S_Init\n");
         S_Init();
+        SYS_TRACE("Host_Init: BGMusic_Init\n");
         BGMusic_Init();
+        SYS_TRACE("Host_Init: Sbar_Init\n");
         Sbar_Init();
+        SYS_TRACE("Host_Init: CL_Init\n");
         CL_Init();
     }
 
+    SYS_TRACE("Host_Init: inserting 'exec quake.rc'\n");
     Cbuf_InsertText("exec quake.rc\n");
 
-    Hunk_AllocName(0, "-HOST_HUNKLEVEL-");
+    Hunk_AllocName(0, "-HOST_HUNK_LEVEL-");
     host_hunklevel = Hunk_LowMark();
 
     host_initialized = true;
 
+    SYS_TRACE("Host_Init: complete\n");
     Sys_Printf("========Quake Initialized=========\n");
 }
 
