@@ -52,22 +52,51 @@ cat > "$IN_CONTAINER_SCRIPT" <<EOF
 set -euo pipefail
 export PATH=/usr/local/ps3dev/ppu/bin:/usr/local/ps3dev/bin:\$PATH
 
-echo "[1/3] Rebuilding PPU binary"
-cmake --build build-ps3 -j"\$(nproc)" 2>&1 | tail -3
+echo "[1/4] Rebuilding PPU binary"
+BUILD_LOG="\$(mktemp)"
+if ! cmake --build build-ps3 -j"\$(nproc)" >"\$BUILD_LOG" 2>&1; then
+    echo "=== BUILD FAILED -- full output: ==="
+    cat "\$BUILD_LOG"
+    rm -f "\$BUILD_LOG"
+    exit 1
+fi
+rm -f "\$BUILD_LOG"
 
-echo "[2/3] Signing EBOOT.BIN (ppu-strip + sprxlinker + make_self_npdrm)"
+echo "[2/4] Signing EBOOT.BIN (ppu-strip + sprxlinker + make_self_npdrm)"
 rm -f /tmp/cq.elf /tmp/EBOOT.BIN
 ppu-strip -o /tmp/cq.elf ${LOCAL_ELF@Q}
 sprxlinker /tmp/cq.elf
 make_self_npdrm /tmp/cq.elf /tmp/EBOOT.BIN ${CONTENT_ID@Q}
 ls -la /tmp/EBOOT.BIN
 
-echo "[3/3] Uploading to ftp://${PS3_FTP_HOST}${PS3_INSTALL_DIR}/EBOOT.BIN"
+echo "[3/4] Uploading to ftp://${PS3_FTP_HOST}${PS3_INSTALL_DIR}/EBOOT.BIN"
 curl --connect-timeout 10 --max-time 120 --ftp-pasv \\
     -T /tmp/EBOOT.BIN \\
     --user ${PS3_FTP_USER@Q}:${PS3_FTP_PASS@Q} \\
     "ftp://${PS3_FTP_HOST}${PS3_INSTALL_DIR}/EBOOT.BIN"
 echo "Upload OK."
+
+echo "[4/4] Verifying remote file size"
+LOCAL_SIZE=\$(stat -c %s /tmp/EBOOT.BIN)
+REMOTE_SIZE=\$(curl -sI --max-time 10 --ftp-pasv \\
+    --user ${PS3_FTP_USER@Q}:${PS3_FTP_PASS@Q} \\
+    "ftp://${PS3_FTP_HOST}${PS3_INSTALL_DIR}/EBOOT.BIN" \\
+    | awk 'tolower(\$1) == "content-length:" {print \$2}' \\
+    | tr -d '\\r\\n')
+if [ -z "\$REMOTE_SIZE" ]; then
+    echo "ERROR: Could not read remote EBOOT.BIN size (FTP HEAD failed)." >&2
+    echo "       Local size was \$LOCAL_SIZE bytes. The PS3 may be off," >&2
+    echo "       FTP may be down, or the upload silently failed." >&2
+    exit 1
+fi
+if [ "\$LOCAL_SIZE" != "\$REMOTE_SIZE" ]; then
+    echo "ERROR: EBOOT.BIN size mismatch after upload." >&2
+    echo "       Local : \$LOCAL_SIZE bytes" >&2
+    echo "       Remote: \$REMOTE_SIZE bytes" >&2
+    echo "       The PS3 is still running the previous build." >&2
+    exit 1
+fi
+echo "Verified: \$LOCAL_SIZE bytes on both sides."
 EOF
 chmod +x "$IN_CONTAINER_SCRIPT"
 

@@ -383,6 +383,13 @@ static void Sys_SysutilCallback(u64 status, u64 param, void* userdata) {
             // PS button was pressed; XMB overlay is opening. Suspend
             // rendering and game updates until SYSUTIL_DRAW_END.
             xmb_menu_open = true;
+            
+            // TODO remove later (this is for testing only)
+            fprintf(stderr,"SYSUTIL_EXIT_GAME on XMB open\n");
+            Sys_FlushLog();
+            Host_Shutdown();
+            exit(0);
+                        
             break;
         case SYSUTIL_DRAW_END:
             // User closed the XMB; return to the game.

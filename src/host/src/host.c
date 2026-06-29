@@ -658,11 +658,7 @@ void _Host_Frame(float time) {
     if (host_speeds.value)
         time1 = Sys_FloatTime();
 
-    SYS_TRACE("_Host_Frame: calling SCR_UpdateScreen (frame=%u)\n",
-              (unsigned) frame_counter);
     SCR_UpdateScreen();
-    SYS_TRACE("_Host_Frame: SCR_UpdateScreen returned (frame=%u)\n",
-              (unsigned) frame_counter);
 
     if (host_speeds.value) {
         time2 = Sys_FloatTime();

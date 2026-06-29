@@ -98,17 +98,16 @@ sfxcache_t* S_LoadSound(sfx_t* s) {
     sfxcache_t* sc;
     byte stackbuf[1 * 1024]; // avoid dirtying the cache heap
 
+    SYS_TRACE("S_LoadSound: '%s'\n", s->name);
+
     // see if still in memory
     sc = Cache_Check(&s->cache);
     if (sc)
         return sc;
 
-    //Con_Printf ("S_LoadSound: %x\n", (i32)stackbuf);
     // load it in
     Q_strcpy(namebuffer, "sound/");
     Q_strcat(namebuffer, s->name);
-
-    //Con_Printf("loading %s\n", namebuffer);
 
     data = COM_LoadStackFile(namebuffer, stackbuf, sizeof(stackbuf));
 
@@ -139,6 +138,7 @@ sfxcache_t* S_LoadSound(sfx_t* s) {
     sc->stereo = info.channels;
 
     ResampleSfx(s, sc->speed, sc->width, data + info.dataofs);
+    SYS_TRACE("S_LoadSound: '%s' done\n", s->name);
 
     return sc;
 }

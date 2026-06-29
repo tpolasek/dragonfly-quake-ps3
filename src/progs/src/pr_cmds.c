@@ -938,6 +938,7 @@ void PF_precache_sound(void) {
             "PF_Precache_*: Precache can only be done in spawn functions");
 
     s = G_STRING(OFS_PARM0);
+    SYS_TRACE("PF_precache_sound: '%s'\n", s);
     G_INT(OFS_RETURN) = G_INT(OFS_PARM0);
     PR_CheckEmptyString(s);
 
@@ -961,6 +962,7 @@ void PF_precache_model(void) {
             "PF_Precache_*: Precache can only be done in spawn functions");
 
     s = G_STRING(OFS_PARM0);
+    SYS_TRACE("PF_precache_model: '%s'\n", s);
     G_INT(OFS_RETURN) = G_INT(OFS_PARM0);
     PR_CheckEmptyString(s);
 
