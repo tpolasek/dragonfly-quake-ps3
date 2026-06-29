@@ -340,8 +340,35 @@ PS3 (PSL1GHT) BACKEND
 // We normalise sticks to [-1, 1] matching SDL_GameControllerAxis convention
 // (right = +X, down = +Y) and triggers to [0, 1]. The shared movement math
 // and axis-button emulation then work identically to the desktop path.
+//
+// The DS3 has measurable hardware drift: a stick at rest can report a
+// "centre" value a few-to-ten units off 0x80. The radial deadzone in
+// IN_ApplyDeadzone (joy_deadzone_look / joy_deadzone_move) catches this
+// when *both* axes are small, but if only one axis drifts past the
+// threshold (e.g. stick reads (0.20, 0.0)) the magnitude clears the
+// radial band and the player slowly spins. So we apply a per-axis
+// deadzone here, with rescale so full deflection still hits +/-1.
 static float IN_PS3_NormalizeStick(u8 v) {
-    return ((float) v - 128.0f) / 128.0f;
+    // Map 0..255 -> [-1, +1] with 128 as the nominal centre. Split the
+    // upper and lower ranges so a raw 255 reaches +1.0 exactly -- a
+    // naive (v - 128) / 128 tops out at 127/128 = 0.992.
+    float raw;
+    if (v >= 128) {
+        raw = (float)(v - 128) / 127.0f;   // [0, +1]
+    } else {
+        raw = (float)(v - 128) / 128.0f;   // [-1, 0]
+    }
+    // Per-axis deadzone: 12 raw units (~9.4% of half-range) absorbs DS3
+    // drift without eating intentional small deflections. Rescale so dz
+    // maps to 0 and 1.0 maps to 1.0.
+    const float dz = 12.0f / 128.0f;
+    if (raw > dz) {
+        return (raw - dz) / (1.0f - dz);
+    }
+    if (raw < -dz) {
+        return (raw + dz) / (1.0f - dz);
+    }
+    return 0.0f;
 }
 
 static float IN_PS3_NormalizeTrigger(u8 v) {

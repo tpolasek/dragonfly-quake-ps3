@@ -169,6 +169,16 @@ static void IN_AddVerticalMove(usercmd_t* cmd, const float move_y) {
 }
 
 void IN_MouseMove(usercmd_t* cmd) {
+#ifdef CHOCOLATE_QUAKE_PS3
+    // PS3 has no mouse. The PSL1GHT SDL2 backend still reports relative
+    // mouse motion (it appears to feed pad stick data into the mouse
+    // path), which would write directly into cl.viewangles[YAW] and
+    // cmd->forwardmove here every frame -- causing the player/camera to
+    // spin even with the stick at rest. Stay out of the way on PS3 and
+    // let IN_JoyMove own all gameplay input via PSL1GHT's io/pad.h.
+    (void) cmd;
+    return;
+#else
     if (!mouse_active) {
         return;
     }
@@ -180,6 +190,7 @@ void IN_MouseMove(usercmd_t* cmd) {
     if (IN_MouseLook()) {
         V_StopPitchDrift();
     }
+#endif
 }
 
 //==============================================================================
@@ -194,9 +205,16 @@ INITIALIZATION
 */
 
 void IN_InitMouse(void) {
+#ifdef CHOCOLATE_QUAKE_PS3
+    // No mouse on PS3; skip the grab and the relative-mode hint entirely.
+    // SDL_GetRelativeMouseState on the PSL1GHT backend returns junk that
+    // would otherwise feed the camera/forwardmove paths (see IN_MouseMove).
+    return;
+#else
     // Use system mouse acceleration.
     SDL_SetHint(SDL_HINT_MOUSE_RELATIVE_SYSTEM_SCALE, "1");
     IN_HideMouse();
+#endif
 }
 
 //==============================================================================
