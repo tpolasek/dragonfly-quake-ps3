@@ -26,6 +26,7 @@
 #include "input.h"
 #include "sys.h"
 #include "vid_buffers.h"
+#include <SDL_hints.h>
 
 static SDL_Window* window = NULL;
 static SDL_Renderer* renderer = NULL;
@@ -84,6 +85,13 @@ static void VID_RegisterCvars(void) {
 }
 
 void VID_InitWindow(void) {
+#ifdef CHOCOLATE_QUAKE_PS3
+    // PS3: force nearest-neighbor sampling so the 320x200 framebuffer
+    // upscales to 720p/1080p with crisp pixels, not bilinear blur. The
+    // hint is read at SDL_CreateTexture time, so it must be set before
+    // VID_ResizeScreen allocates the streaming texture.
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
+#endif
     VID_RegisterCvars();
     VID_CreateWindow();
     VID_CreateRenderer();
