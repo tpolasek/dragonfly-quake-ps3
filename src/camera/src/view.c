@@ -28,6 +28,7 @@
 #include "host.h"
 #include "model.h"
 #include "screen.h"
+#include "sys.h"
 #include <math.h>
 #include <stdlib.h>
 
@@ -812,6 +813,8 @@ the entity origin, so any view position inside that will be valid
 extern vrect_t scr_vrect;
 
 void V_RenderView(void) {
+    SYS_TRACE("V_RenderView: enter (con_forcedup=%d cl.intermission=%d)\n",
+              (int) con_forcedup, (int) cl.intermission);
     if (con_forcedup)
         return;
 
@@ -861,7 +864,9 @@ void V_RenderView(void) {
         vid.width >>= 1;
         vid.aspect *= 2;
     } else {
+        SYS_TRACE("V_RenderView: calling R_RenderView\n");
         R_RenderView();
+        SYS_TRACE("V_RenderView: R_RenderView returned\n");
     }
 
     if (crosshair.value)

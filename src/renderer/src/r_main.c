@@ -962,9 +962,19 @@ void R_RenderView(void) {
     i32 dummy;
     i32 delta;
 
+    SYS_TRACE("R_RenderView: enter\n");
     delta = (byte*) &dummy - r_stack_start;
+#ifndef CHOCOLATE_QUAKE_PS3
+    // This check was a DOS-era guard against calling the renderer from a
+    // call chain so deep that the renderer's own stack usage would
+    // overflow. On PS3 we run on a 2 MB worker thread stack and the
+    // call chain depth differs between R_Init (Host_Init, where
+    // r_stack_start is captured) and R_RenderView (frame loop), so the
+    // check fires spuriously.
     if (delta < -10000 || delta > 10000)
         Sys_Error("R_RenderView: called without enough stack");
+#endif
+    SYS_TRACE("R_RenderView: stack delta=%d\n", (int) delta);
 
     if (Hunk_LowMark() & 3)
         Sys_Error("Hunk is missaligned");
@@ -975,7 +985,9 @@ void R_RenderView(void) {
     if ((intptr_t) (&r_warpbuffer) & 3)
         Sys_Error("Globals are missaligned");
 
+    SYS_TRACE("R_RenderView: calling R_RenderView_\n");
     R_RenderView_();
+    SYS_TRACE("R_RenderView: R_RenderView_ returned\n");
 }
 
 /*

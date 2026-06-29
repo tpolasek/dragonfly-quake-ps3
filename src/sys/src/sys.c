@@ -205,19 +205,6 @@ void Sys_Printf(char* fmt, ...) {
     va_end(argptr);
 }
 
-#ifdef CHOCOLATE_QUAKE_PS3
-// Backing for the SYS_TRACE macro declared in sys.h. Unbuffered fprintf +
-// fflush so we get every step in the log even if the process is killed
-// mid-startup before the next newline would have flushed.
-void Sys_Trace(const char* fmt, ...) {
-    va_list argptr;
-    va_start(argptr, fmt);
-    vfprintf(stdout, fmt, argptr);
-    va_end(argptr);
-    fflush(stdout);
-}
-#endif
-
 void Sys_Quit(void) {
     Host_Shutdown();
 #ifdef CHOCOLATE_QUAKE_PS3

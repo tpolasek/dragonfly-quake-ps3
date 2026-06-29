@@ -580,10 +580,12 @@ void _Host_Frame(float time) {
     static double time1 = 0;
     static double time2 = 0;
     static double time3 = 0;
+    static u32 frame_counter = 0;
     i32 pass1, pass2, pass3;
 
     if (setjmp(host_abortserver)) {
         // something bad happened, or the server disconnected
+        SYS_TRACE("_Host_Frame: longjmp from host_abortserver\n");
         return;
     }
 
@@ -595,6 +597,17 @@ void _Host_Frame(float time) {
         // don't run too fast, or packets will flood out
         return;
     }
+
+    // Trace every 60 frames (~1 second at 72 Hz) so we can tell the loop
+    // is actually advancing. Without this, a frozen screen gives zero
+    // signal about whether frames are running or the whole thing hung.
+    if ((frame_counter % 60) == 0) {
+        SYS_TRACE("_Host_Frame: frame=%u cls.state=%d sv.active=%d "
+                  "signon=%d realtime=%.3f\n",
+                  (unsigned) frame_counter, (int) cls.state,
+                  (int) sv.active, (int) cls.signon, realtime);
+    }
+    frame_counter++;
 
     // get new key events
     Sys_SendKeyEvents();
@@ -645,7 +658,11 @@ void _Host_Frame(float time) {
     if (host_speeds.value)
         time1 = Sys_FloatTime();
 
+    SYS_TRACE("_Host_Frame: calling SCR_UpdateScreen (frame=%u)\n",
+              (unsigned) frame_counter);
     SCR_UpdateScreen();
+    SYS_TRACE("_Host_Frame: SCR_UpdateScreen returned (frame=%u)\n",
+              (unsigned) frame_counter);
 
     if (host_speeds.value) {
         time2 = Sys_FloatTime();

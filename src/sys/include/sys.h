@@ -90,10 +90,16 @@ qboolean Sys_XmbMenuOpen(void);
 // PS3-only startup tracing. Writes immediately (fprintf + fflush) to the log
 // file opened by Sys_OpenLog, so we capture the last successful step even if
 // the process hard-crashes mid-startup. Compiles to nothing elsewhere so
-// desktop builds stay quiet.
+// desktop builds stay quiet. Inlined as a macro (rather than a call to a
+// Sys_Trace function) so each call site emits its own fprintf/fflush and we
+// don't have to chase static-library link order across the various lib*.a
+// archives that make up the executable.
 #ifdef CHOCOLATE_QUAKE_PS3
-void Sys_Trace(const char* fmt, ...);
-#define SYS_TRACE(...) Sys_Trace("[trace] " __VA_ARGS__)
+#include <stdio.h>
+#define SYS_TRACE(...) do { \
+    fprintf(stdout, "[trace] " __VA_ARGS__); \
+    fflush(stdout); \
+} while (0)
 #else
 #define SYS_TRACE(...) ((void)0)
 #endif
