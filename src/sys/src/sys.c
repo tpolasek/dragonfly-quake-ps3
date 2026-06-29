@@ -36,6 +36,7 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <string.h>
+#include <unistd.h>
 
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
@@ -171,6 +172,9 @@ void Sys_Error(char* error, ...) {
 
     fflush(stdout);
     fprintf(stderr, "Error: %s\n", string);
+#ifdef CHOCOLATE_QUAKE_PS3
+    Sys_FlushLog();
+#endif
     Sys_ShowErrorModal(string);
 
     Host_Shutdown();
@@ -187,6 +191,9 @@ void Sys_Printf(char* fmt, ...) {
 
 void Sys_Quit(void) {
     Host_Shutdown();
+#ifdef CHOCOLATE_QUAKE_PS3
+    Sys_FlushLog();
+#endif
     ES_DisplayScreen();
     exit(0);
 }
@@ -316,6 +323,35 @@ static void Sys_SigInit(void) {
 #define DEFAULT_MEMORY (256 * 1024 * 1024)
 #endif
 
+#ifdef CHOCOLATE_QUAKE_PS3
+// On PS3 there's no stdout/stderr to capture, so write a log file next to
+// EBOOT.BIN so we can FTP it back and see where the game died. Opened at
+// the very start of Sys_Init; everything that goes through printf /
+// Sys_Printf / Sys_Error lands here.
+#define PS3_LOG_PATH "/dev_hdd0/game/CHQK00001/USRDIR/chocolate-quake.log"
+
+static void Sys_OpenLog(void) {
+    FILE* f = fopen(PS3_LOG_PATH, "w");
+    if (!f) {
+        return;
+    }
+    int fd = fileno(f);
+    // Redirect both stdout and stderr to the log file.
+    dup2(fd, STDOUT_FILENO);
+    dup2(fd, STDERR_FILENO);
+    // Line-buffered so partial lines flush at every newline; if the game
+    // hard-crashes mid-line we still get the previous lines.
+    setvbuf(stdout, NULL, _IOLBF, 0);
+    setvbuf(stderr, NULL, _IOLBF, 0);
+    fprintf(stderr, "=== chocolate-quake PS3 log start ===\n");
+}
+
+static void Sys_FlushLog(void) {
+    fflush(stdout);
+    fflush(stderr);
+}
+#endif
+
 static char* Sys_GetDefaultBaseDir(void) {
 #ifdef _WIN32
     return ".";
@@ -363,6 +399,11 @@ static quakeparms_t* Sys_InitParms(i32 argc, char** argv) {
 }
 
 quakeparms_t* Sys_Init(i32 argc, char* argv[]) {
+#ifdef CHOCOLATE_QUAKE_PS3
+    // Open the log file before anything else can fail, so we capture
+    // startup messages and any Sys_Error output.
+    Sys_OpenLog();
+#endif
 #ifdef HAVE_SIGNAL_H
     Sys_SigInit();
 #endif
