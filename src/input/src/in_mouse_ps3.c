@@ -21,7 +21,7 @@
 //
 // The DualShock 3 has no pointer; IN_JoyMove owns all gameplay input via
 // PSL1GHT's io/pad.h. We provide the symbols in_main.c calls so the input
-// subsystem links without the desktop SDL mouse code.
+// subsystem links without the desktop mouse code.
 
 
 #include "in_mouse.h"

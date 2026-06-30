@@ -287,7 +287,7 @@ static void Sys_SigInit(void) {
 
 
 // Desktop builds happily grab 256 MB. PS3 has only 256 MB of main RAM
-// (shared with the OS and SDL2/RSX framebuffer), so cap the heap lower.
+// (shared with the OS and RSX framebuffer), so cap the heap lower.
 #define DEFAULT_MEMORY (128 * 1024 * 1024)
 
 // On PS3 there's no stdout/stderr to capture, so write a log file next to
@@ -364,10 +364,9 @@ qboolean Sys_XmbMenuOpen(void) {
 
 static char* Sys_GetDefaultBaseDir(void) {
     // On PS3, the .pkg ships id1/ next to EBOOT.BIN under the title's
-    // USRDIR (e.g. /dev_hdd0/game/<TITLE_ID>/USRDIR/). The PSL1GHT SDL2
-    // build returns NULL from SDL_GetBasePath(), so we hardcode the
-    // title's USRDIR -- that's where make_pkg.sh installs id1/ alongside
-    // EBOOT.BIN.
+    // USRDIR (e.g. /dev_hdd0/game/<TITLE_ID>/USRDIR/). PSL1GHT exposes
+    // no base-path API, so we hardcode the title's USRDIR -- that's
+    // where make_pkg.sh installs id1/ alongside EBOOT.BIN.
     #define PS3_BASE_DIR "/dev_hdd0/game/CHQK00001/USRDIR"
     SYS_TRACE("Sys_GetDefaultBaseDir: PS3 hardcoding '%s'\n", PS3_BASE_DIR);
     return PS3_BASE_DIR;

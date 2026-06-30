@@ -1,8 +1,9 @@
 // vid_ps3.c -- PS3 direct RSX video backend.
 //
-// Bypasses SDL2's renderer API entirely. The PSL1GHT SDL2 RSX backend's
-// SDL_RenderPresent hangs after exactly 127 frames due to improper flip-queue
-// management (it never calls gcmSetWaitFlip / gcmGetFlipStatus to recycle
+// Owns the RSX/gcm pipeline directly. An earlier version of this code
+// layered on top of the platform's renderer API, but that backend's
+// present call hung after exactly 127 frames due to improper flip-queue
+// management (it never called gcmSetWaitFlip / gcmGetFlipStatus to recycle
 // display buffers).
 //
 // Instead, we use PSL1GHT's gcm_* API directly to:
@@ -36,8 +37,8 @@ static qboolean s_initialized = false;
 void VID_PS3_Init(void) {
     SYS_TRACE("[vid_ps3] init enter\n");
 
-    // Try to reuse the global GCM context. If none was set up (e.g. SDL
-    // is not initializing the video subsystem), fall back to calling rsxInit
+    // Try to reuse the global GCM context. If none was set up (e.g. we
+    // were not handed one by a higher layer), fall back to calling rsxInit
     // ourselves with a private 1 MB IO buffer.
     s_context = gGcmContext;
     if (!s_context) {
@@ -71,9 +72,9 @@ void VID_PS3_Init(void) {
     SYS_TRACE("[vid_ps3] display: %dx%d pitch=%d\n",
               s_display_w, s_display_h, s_pitch);
 
-    // Configure the display pipeline. Previously this was done by
-    // SDL's PSL1GHT_InitModes (called inside SDL_Init(SDL_INIT_VIDEO)),
-    // but now that SDL_Init is removed for PS3 we must do it ourselves.
+    // Configure the display pipeline. Previously set up by the platform
+    // video init; since we now own video init directly, we must do it
+    // ourselves.
     videoConfiguration vconfig = {0};
     vconfig.resolution = vstate.displayMode.resolution;
     vconfig.format     = VIDEO_BUFFER_FORMAT_XRGB;
@@ -149,7 +150,8 @@ void VID_PS3_Present(const void *src_pixels, int src_w, int src_h) {
     //   1. gcmSetFlip     -- enqueue the flip command
     //   2. rsxFlushBuffer -- push commands to the RSX
     //   3. gcmSetWaitFlip -- insert a "wait for flip" into the command buffer
-    // Step 3 is what SDL2's backend omits, causing the 127-frame hang.
+    // Step 3 is the part the earlier layered backend omitted, causing
+    // the 127-frame hang.
     gcmSetFlip(s_context, next);
     rsxFlushBuffer(s_context);
     gcmSetWaitFlip(s_context);

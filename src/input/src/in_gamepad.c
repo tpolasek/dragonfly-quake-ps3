@@ -20,10 +20,10 @@
 // in_gamepad.c -- gamepad code
 //
 // PS3-only. The DualShock 3 is polled every frame via PSL1GHT's io/pad.h
-// (IN_PollGamepad, called from Sys_SendKeyEvents). We bypass SDL entirely
-// because the PSL1GHT SDL2 joystick driver ships with no usable
-// SDL_GameController mapping and the pad-rumble/Bluetooth glue added
-// latency. PSL1GHT's padData already exposes decoded bitfields
+// (IN_PollGamepad, called from Sys_SendKeyEvents). We poll the pad
+// directly because the PSL1GHT joystick driver ships with no usable
+// controller mapping and the rumble/Bluetooth glue added latency.
+// PSL1GHT's padData already exposes decoded bitfields
 // (BTN_CROSS, BTN_TRIANGLE, ANA_L_H, PRE_L2, ...) so the direct path is
 // both simpler and lower-latency.
 
@@ -56,10 +56,10 @@ static cvar_t joy_enable = {"joy_enable", "1", true};
 // ---------------------------------------------------------------------------
 // Internal gamepad button / axis identifiers.
 //
-// Numeric values intentionally match SDL_GameControllerButton /
-// SDL_GameControllerAxis so the desktop SDL path is unchanged, but the
-// enum decouples the rest of the file from SDL's headers. The PS3 backend
-// indexes the same arrays via these IDs.
+// Numeric values follow the conventional game-controller button/axis
+// ordering so the desktop path is unchanged, but the enum decouples the
+// rest of the file from any external header. The PS3 backend indexes
+// the same arrays via these IDs.
 // ---------------------------------------------------------------------------
 typedef enum {
     PAD_BTN_A,             // Cross on PS3
@@ -248,7 +248,7 @@ PS3 (PSL1GHT) BACKEND
 // (0 = full left/up, 0xFF = full right/down). Triggers (L2/R2) are u8
 // pressures 0 (released) .. 0xFF (fully pressed).
 //
-// We normalise sticks to [-1, 1] matching SDL_GameControllerAxis convention
+// We normalise sticks to [-1, 1] matching the conventional game-controller axis convention
 // (right = +X, down = +Y) and triggers to [0, 1]. The shared movement math
 // and axis-button emulation then work identically to the desktop path.
 //
@@ -316,7 +316,7 @@ static void IN_PS3_ReleaseAll(void) {
 }
 
 // Read one frame of pad data and feed it through the same button / axis
-// state machine the SDL backend uses. Called once per frame from
+// state machine used by the event-driven path. Called once per frame from
 // Sys_SendKeyEvents.
 void IN_PollGamepad(void) {
     if (joy_enable.value == 0) {
@@ -643,7 +643,7 @@ void IN_InitGamepad(void) {
         // Abort startup if user requests no joystick.
         return;
     }
-    // PSL1GHT io/pad.h -- bypass SDL_GameController entirely.
+    // PSL1GHT io/pad.h -- bypass any controller abstraction entirely.
     // 7 is MAX_PORT_NUM (the PS3 supports up to 7 pads over Bluetooth).
     SYS_TRACE("[pad] ioPadInit(7)\n");
     const s32 rc = ioPadInit(MAX_PORT_NUM);

@@ -211,7 +211,7 @@ static void COM_CopyFile(char* netpath, char* cachepath) {
     i32 out = Sys_FileOpenWrite(cachepath);
 
     while (remaining) {
-        i32 count = SDL_min(remaining, sizeof(buf));
+        i32 count = Q_min(remaining, sizeof(buf));
         Sys_FileRead(in, buf, count);
         Sys_FileWrite(out, buf, count);
         remaining -= count;

@@ -29,7 +29,7 @@ if(MATH)
 endif()
 
 if(CHOCOLATE_QUAKE_PS3)
-	# PS3 (PPU/PSL1GHT) path: native PSL1GHT APIs, no SDL2.
+	# PS3 (PPU/PSL1GHT) path: native PSL1GHT APIs.
 	#
 	# Expose CHOCOLATE_QUAKE_PS3 to source so platform branches (e.g.
 	# Sys_GetDefaultBaseDir in src/sys) can pick the PS3 layout.
@@ -41,8 +41,8 @@ if(CHOCOLATE_QUAKE_PS3)
 	# is on the compiler's default search path.
 	include_directories("${PS3DEV}/portlibs/ppu/include" "${PS3DEV}/ppu/include")
 
-	# PSL1GHT runtime libraries (were transitively pulled in by SDL2 before
-	# its removal). Applied globally so every target links them. -lm is
+	# PSL1GHT runtime libraries, required by the native backends. Applied
+	# globally so every target links them. -lm is
 	# required by the codec libs (vorbis/FLAC); find_library(MATH m) at the
 	# top of this file can't see it because CMAKE_FIND_ROOT_PATH points at
 	# the install prefix, not the powerpc64-ps3-elf sysroot where libm.a lives.
@@ -54,8 +54,6 @@ if(CHOCOLATE_QUAKE_PS3)
 	find_library(FLAC_LIBRARY FLAC REQUIRED)
 	find_library(OGG_LIBRARY ogg REQUIRED)
 else()
-	find_package(SDL2 CONFIG REQUIRED)
-	find_package(SDL2_net CONFIG REQUIRED)
 	if(UNIX AND NOT APPLE)
 		find_library(VORBIS_LIBRARY vorbis REQUIRED)
 		find_library(VORBISFILE_LIBRARY vorbisfile REQUIRED)

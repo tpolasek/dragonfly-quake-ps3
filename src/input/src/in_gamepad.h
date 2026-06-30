@@ -26,10 +26,10 @@
 #include "quakedef.h"
 #include "client.h"
 
-// Desktop builds receive gamepad input asynchronously via SDL events
+// Desktop builds receive gamepad input asynchronously as events
 // (IN_GamepadEvent, pumped from Sys_SendKeyEvents). PS3 builds bypass
-// SDL entirely and poll the DualShock 3 directly via PSL1GHT's io/pad.h
-// each frame (IN_PollGamepad) -- the SDL2 PSL1GHT backend had no usable
+// that and poll the DualShock 3 directly via PSL1GHT's io/pad.h each
+// frame (IN_PollGamepad) -- the PSL1GHT backend had no usable
 // game-controller mapping and the Bluetooth pad-rumble layer added
 // latency. PSL1GHT gives us a padData bitfield with named BTN_CROSS /
 // BTN_TRIANGLE / etc. fields, so we read those directly.

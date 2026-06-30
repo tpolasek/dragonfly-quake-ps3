@@ -414,7 +414,7 @@ static void BGMusic_UpdateVolume() {
     if (bgmvolume.value == cdvolume) {
         return;
     }
-    bgmvolume.value = SDL_clamp(bgmvolume.value, 0, 1);
+    bgmvolume.value = Q_clamp(bgmvolume.value, 0, 1);
     Cvar_SetValue("bgmvolume", bgmvolume.value);
     cdvolume = bgmvolume.value;
     if (cdvolume == 0) {

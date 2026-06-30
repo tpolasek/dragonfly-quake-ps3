@@ -1,9 +1,10 @@
 /*
  * PS3 native audio backend using PSL1GHT libaudio.
  *
- * Closely follows the SDL2 PSL1GHT audio driver (SDL_psl1ghtaudio.c).
- * A dedicated audio thread loops: wait for DMA block consumption event,
- * convert Quake's int16 ring buffer to float32, write to the next DMA block.
+ * Block-based float32 DMA with event-queue sync, following the proven
+ * PSL1GHT audio pattern. A dedicated audio thread loops: wait for DMA
+ * block consumption event, convert Quake's int16 ring buffer to float32,
+ * write to the next DMA block.
  */
 
 #include "sys.h"
@@ -26,7 +27,7 @@ static sys_ppu_thread_t  _audio_thread_id;
 static qboolean          _audio_initialized = false;
 
 /*
- * Audio thread: mirrors SDL2's WaitDevice → GetDeviceBuf → fill loop.
+ * Audio thread: mirrors the classic WaitDevice → GetDeviceBuf → fill loop pattern.
  * Blocks on the event queue, converts one block of int16 → float32, repeats.
  */
 static void _audio_thread_func(void *arg) {

@@ -34,8 +34,6 @@ to build Chocolate Quake on Windows and macOS.
 * CMake 3.21 or newer
 * Ninja (recommended)
 * Git
-* SDL2 >= 2.26.5
-* SDL2_net
 * Audio libraries:
     * libvorbis + libvorbisfile
     * libflac

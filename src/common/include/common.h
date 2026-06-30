@@ -57,15 +57,15 @@ typedef int16_t i16;
 typedef int32_t i32;
 typedef int64_t i64;
 
-/* SDL-compatible helper macros (no longer depend on SDL_stdinc.h) */
-#ifndef SDL_min
-#define SDL_min(a, b) ((a) < (b) ? (a) : (b))
+/* Helper macros. */
+#ifndef Q_min
+#define Q_min(a, b) ((a) < (b) ? (a) : (b))
 #endif
-#ifndef SDL_clamp
-#define SDL_clamp(x, lo, hi) ((x) < (lo) ? (lo) : ((x) > (hi) ? (hi) : (x)))
+#ifndef Q_clamp
+#define Q_clamp(x, lo, hi) ((x) < (lo) ? (lo) : ((x) > (hi) ? (hi) : (x)))
 #endif
-#ifndef SDL_arraysize
-#define SDL_arraysize(array) (sizeof(array) / sizeof((array)[0]))
+#ifndef Q_arraysize
+#define Q_arraysize(array) (sizeof(array) / sizeof((array)[0]))
 #endif
 
 #undef true

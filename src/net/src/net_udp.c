@@ -56,7 +56,7 @@ static qboolean UDP_IsLocalAddr(const IPaddress* addr) {
 
 static void UDP_FindLocalAddr(void) {
     IPaddress addrs[10] = {0};
-    const i32 count = SDL_arraysize(addrs);
+    const i32 count = Q_arraysize(addrs);
     PS3Net_GetLocalAddresses(addrs, count);
     for (i32 i = 0; i < count; i++) {
         if (!UDP_IsLocalAddr(&addrs[i])) {

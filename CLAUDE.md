@@ -4,8 +4,8 @@ Chocolate Quake is a faithful source port of Quake 1 (DOS version) that preserve
 original software renderer at its original 320x200 resolution. The port targets PS3
 homebrew exclusively (PSL1GHT/PS3DEV toolchain, powerpc64-ps3-elf target) and talks to
 the hardware through native PSL1GHT APIs -- RSX for video, libaudio for sound, the pad
-API for input, and `sysGetSystemTime` for the frame clock. SDL2 has been removed
-entirely; the earlier desktop (Linux/macOS/Windows) builds are no longer supported.
+API for input, and `sysGetSystemTime` for the frame clock. The earlier desktop
+(Linux/macOS/Windows) builds are no longer supported.
 
 ## Source layout
 
@@ -69,7 +69,7 @@ To clear the log between runs, just relaunch the game -- `Sys_OpenLog` reopens w
   (see `src/main.c`). Several Quake functions allocate large stack arrays that would
   otherwise overflow (`R_AliasDrawModel` ~88 KB, `R_RenderWorld` up to ~80 KB,
   `COM_LoadPackFile` 128 KB -- last one is `static` to avoid the issue too).
-- **Base directory.** PSL1GHT has no `SDL_GetBasePath`-equivalent, so
+- **Base directory.** PSL1GHT exposes no base-path API, so
   `Sys_GetDefaultBaseDir` hardcodes `/dev_hdd0/game/CHQK00001/USRDIR` -- where
   `make_pkg.sh` installs `id1/` next to `EBOOT.BIN`. Change the `TITLE_ID` in
   `cmake/ps3/make_pkg.sh` and this constant together.
@@ -80,10 +80,9 @@ To clear the log between runs, just relaunch the game -- `Sys_OpenLog` reopens w
   `sys.h`; if a new translation unit hits "undefined reference to SYS_TRACE" or
   "sys.h not found", add `target_include_directories(<target> PRIVATE ../sys/include)`
   to its `CMakeLists.txt`.
-- **Networking.** Unavailable. `src/net/` still compiles but links against an SDL-free
-  stub (`cmake/ps3/sdl2_net_stub/`) that provides the `SDL_net.h` API surface so the
-  net subsystem builds unchanged; every `SDLNet_*` call fails gracefully. Demo
-  playback and single-player work.
+- **Networking.** Unavailable. `src/net/` still compiles but links against a local
+  stub (`cmake/ps3/ps3_net_stub/`) that provides a UDP socket/packet API; every call
+  fails gracefully. Demo playback and single-player work.
 - **XMB / PS button.** `sysUtilRegisterCallback` is registered in `Sys_Init`. The
   worker thread's frame loop calls `Sys_XmbMenuOpen()` each frame, which is the sole
   pumper of `sysUtilCheckCallback` -- so the sysutil callback fires on the worker.
@@ -96,10 +95,8 @@ To clear the log between runs, just relaunch the game -- `Sys_OpenLog` reopens w
 
 ## Desktop build
 
-Not supported. The SDL2 desktop backend (window, renderer, audio, input) was removed
-when the port went PS3-only: the subsystem libraries no longer link or compile SDL2
-code, the end-screen module and keyboard/mouse input were deleted, and the link line
-binds PSL1GHT runtime libs directly (`-lgcm_sys -lrsx -lsysutil -lio -laudio -lrt -llv2
--lm`). The top-level `CMakeLists.txt` retains a desktop `else` branch referencing
-vcpkg/SDL2 for historical context, but it no longer produces a working binary. Use the
-PS3 build above.
+Not supported. The port is PS3-only: the subsystem libraries talk directly to PSL1GHT,
+the end-screen module and keyboard/mouse input were deleted, and the link line binds
+the runtime libs directly (`-lgcm_sys -lrsx -lsysutil -lio -laudio -lrt -llv2 -lm`).
+The top-level `CMakeLists.txt` retains a desktop `else` branch referencing vcpkg for
+historical context, but it no longer produces a working binary. Use the PS3 build above.

@@ -169,7 +169,7 @@ static i32 MP3_Decode(snd_stream_t* stream, byte* buf, i32 len) {
 
     do {
         x = (p->synth.pcm.length - p->cur_samp) * stream->info.channels;
-        donow = SDL_min(len, x);
+        donow = Q_min(len, x);
         i = 0;
         while (i < donow) {
             for (chan = 0; chan < stream->info.channels; chan++) {

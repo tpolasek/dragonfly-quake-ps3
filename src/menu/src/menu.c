@@ -1053,7 +1053,7 @@ void M_AdjustSliders(i32 dir) {
             break;
         case 6: // music volume
             bgmvolume.value += dir * 0.1f;
-            bgmvolume.value = SDL_clamp(bgmvolume.value, 0, 1);
+            bgmvolume.value = Q_clamp(bgmvolume.value, 0, 1);
             Cvar_SetValue("bgmvolume", bgmvolume.value);
             break;
         case 7: // sfx volume

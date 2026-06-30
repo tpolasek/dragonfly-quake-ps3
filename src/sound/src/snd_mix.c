@@ -334,7 +334,7 @@ static void SND_PaintChannelFrom16(channel_t* ch, sfxcache_t* sc, i32 count,
 
 static void S_PaintMusic(i32 end) {
     // Copy from the streaming sound source.
-    i32 stop = SDL_min(end, s_rawend);
+    i32 stop = Q_min(end, s_rawend);
     for (i32 i = paintedtime; i < stop; i++) {
         i32 s = i & (MAX_RAW_SAMPLES - 1);
         const portable_samplepair_t* raw_sample = &s_rawsamples[s];
@@ -366,8 +366,8 @@ static void S_ClipSamples(i32 end) {
     i32 max = 32767 * 256;
     for (i32 i = 0; i < end - paintedtime; i++) {
         portable_samplepair_t* sample = &paintbuffer[i];
-        sample->left = SDL_clamp(sample->left, min, max) / 2;
-        sample->right = SDL_clamp(sample->right, min, max) / 2;
+        sample->left = Q_clamp(sample->left, min, max) / 2;
+        sample->right = Q_clamp(sample->right, min, max) / 2;
     }
 }
 
@@ -433,7 +433,7 @@ void S_PaintChannels(i32 endtime) {
 
     while (paintedtime < endtime) {
         // If paintbuffer is smaller than DMA buffer.
-        i32 end = SDL_min(endtime, paintedtime + PAINTBUFFER_SIZE);
+        i32 end = Q_min(endtime, paintedtime + PAINTBUFFER_SIZE);
 
         S_ClearPaintBuffer(end);
         S_PaintSfx(end);

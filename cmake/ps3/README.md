@@ -93,10 +93,9 @@ top of `cmake/ps3/make_pkg.sh`.
 |                                     | on ps3dev); `src/net/` links here        |
 | `cmake/ps3/make_pkg.sh`             | Packaging script                         |
 
-### Native PSL1GHT backends (SDL2 removed)
+### Native PSL1GHT backends
 
-The port is PS3-only and uses PSL1GHT APIs directly -- there is no SDL in the
-source, the build, or the link line. Backends:
+The port is PS3-only and uses PSL1GHT APIs directly. Backends:
 
 | Subsystem | Backend                                                                |
 |-----------|------------------------------------------------------------------------|
@@ -106,7 +105,7 @@ source, the build, or the link line. Backends:
 |           | with event-queue sync, int16 mix -> float32 in `SNDDMA_Submit`         |
 | input     | PSL1GHT pad API polled each frame in `src/input/src/in_gamepad.c`      |
 |           | (pad-only -- keyboard and mouse are gone)                              |
-| timer     | `sysGetSystemTime()` in `Sys_FloatTime` (no SDL timer init)            |
+| timer     | `sysGetSystemTime()` in `Sys_FloatTime` (native, no init step)          |
 
 The top-level `CMakeLists.txt` links the PSL1GHT runtime libs directly:
 `-lgcm_sys -lrsx -lsysutil -lio -laudio -lrt -llv2 -lm`.

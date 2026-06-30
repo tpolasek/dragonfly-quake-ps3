@@ -172,7 +172,7 @@ void* Z_Realloc(void* ptr, i32 size) {
         Sys_Error("Z_Realloc: failed on allocation of %i bytes", size);
     }
     if (ptr != old_ptr) {
-        Q_memmove(ptr, old_ptr, SDL_min(old_size, size));
+        Q_memmove(ptr, old_ptr, Q_min(old_size, size));
     }
     if (old_size < size) {
         Q_memset((char*) ptr + old_size, 0, size - old_size);

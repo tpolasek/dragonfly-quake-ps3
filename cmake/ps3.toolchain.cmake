@@ -35,5 +35,5 @@ set(ENV{PKG_CONFIG_SYSROOT_DIR} "${PS3DEV}/portlibs/ppu")
 set(CMAKE_C_COMPILER_WORKS ON)
 set(CMAKE_C_PLATFORM_HAS_FPU ON)
 
-# Project-side flag used to switch to PS3-specific deps (e.g. SDL2_net stub).
+# Project-side flag used to switch to PS3-specific deps (e.g. the PS3 net stub).
 set(CHOCOLATE_QUAKE_PS3 ON CACHE BOOL "Building for PS3 (PPU/PSL1GHT)" FORCE)

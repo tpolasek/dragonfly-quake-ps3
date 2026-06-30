@@ -30,7 +30,7 @@ void IN_Init(void);
 
 void IN_Shutdown(void);
 
-// PS3 polls the pad directly via PSL1GHT (no SDL_GameController path).
+// PS3 polls the pad directly via PSL1GHT (no game-controller abstraction).
 void IN_PollGamepad(void);
 
 // add additional movement on top of the keyboard move cmd

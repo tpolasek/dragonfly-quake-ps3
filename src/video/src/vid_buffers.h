@@ -28,7 +28,7 @@ void VID_ReallocBuffers(void);
 
 void VID_FreeBuffers(void);
 
-// PS3: CPU palette expansion + direct RSX present (no SDL texture).
+// PS3: CPU palette expansion + direct RSX present.
 void VID_UpdateAndPresent(vrect_t* rect);
 
 // PS3 direct-RSX backend (vid_ps3.c).
