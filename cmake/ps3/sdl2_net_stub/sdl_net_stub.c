@@ -24,6 +24,13 @@ int gethostname(char *name, size_t len) {
     return 0;
 }
 
+static char net_error_buf[256] = "";
+
+static void NET_SetError(const char *msg) {
+    strncpy(net_error_buf, msg, sizeof(net_error_buf) - 1);
+    net_error_buf[sizeof(net_error_buf) - 1] = '\0';
+}
+
 int SDLNet_Init(void) {
     NET_SetError("SDL2_net stub: networking not available on PS3");
     return -1;

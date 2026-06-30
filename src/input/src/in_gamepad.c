@@ -19,17 +19,13 @@
  */
 // in_gamepad.c -- gamepad code
 //
-// Two backends share the button/axis state and movement math in this file:
-//
-//   * Desktop  -- SDL_GameController events (IN_GamepadEvent, pumped by
-//                 Sys_SendKeyEvents' SDL_PollEvent loop).
-//   * PS3      -- PSL1GHT io/pad.h polled every frame (IN_PollGamepad).
-//                 We bypass SDL entirely on PS3 because the PSL1GHT SDL2
-//                 joystick driver ships with no SDL_GameController mapping
-//                 and the resulting pad-rumble/Bluetooth glue added latency.
-//                 PSL1GHT's padData already exposes decoded bitfields
-//                 (BTN_CROSS, BTN_TRIANGLE, ANA_L_H, PRE_L2, ...) so the
-//                 direct path is both simpler and lower-latency.
+// PS3-only. The DualShock 3 is polled every frame via PSL1GHT's io/pad.h
+// (IN_PollGamepad, called from Sys_SendKeyEvents). We bypass SDL entirely
+// because the PSL1GHT SDL2 joystick driver ships with no usable
+// SDL_GameController mapping and the pad-rumble/Bluetooth glue added
+// latency. PSL1GHT's padData already exposes decoded bitfields
+// (BTN_CROSS, BTN_TRIANGLE, ANA_L_H, PRE_L2, ...) so the direct path is
+// both simpler and lower-latency.
 
 
 #include "in_gamepad.h"
@@ -41,13 +37,8 @@
 #define SYS_TRACE_ACTIVE 1
 #include "sys.h"
 
-#ifndef CHOCOLATE_QUAKE_PS3
-#include <SDL.h>
-#else
 #include <io/pad.h>
-#endif
 #include <math.h>
-
 
 static cvar_t joy_deadzone_look = {"joy_deadzone_look", "0.175", true};
 static cvar_t joy_deadzone_move = {"joy_deadzone_move", "0.175", true};
@@ -148,16 +139,11 @@ static button_t right_trigger_button = {.key = K_RTRIGGER};
 
 static axis_t axes[PAD_AXIS_MAX] = {0};
 
-#ifndef CHOCOLATE_QUAKE_PS3
-static SDL_GameController* gamepad = NULL;
-static SDL_JoystickID gamepad_id = -1;
-#else
 static qboolean gamepad_connected = false;
 // PSL1GHT padInfo2 port_status is only updated by ioPadGetInfo2; we cache
 // it here so IN_PollGamepad can detect (dis)connect transitions and feed
-// them into the same was_pressed/pressed machinery SDL events would have.
+// them into the same was_pressed/pressed machinery.
 static u32 ps3_port_status = 0;
-#endif
 
 
 /*
@@ -253,90 +239,10 @@ static void IN_SendButtonEvent(button_t* button) {
 /*
 ================================================================================
 
-DESKTOP (SDL) BACKEND
-
-================================================================================
-*/
-#ifndef CHOCOLATE_QUAKE_PS3
-
-static void IN_AxisEvent(const SDL_ControllerAxisEvent* event) {
-    if (event->which != gamepad_id) {
-        return;
-    }
-    axis_t* axis = &axes[event->axis];
-    axis->previous_value = axis->value;
-    axis->value = (float) event->value / 32768.0f;
-    IN_EmulateButtonForAxis(event->axis);
-}
-
-static void IN_ButtonEvent(const SDL_ControllerButtonEvent* event) {
-    if (event->which != gamepad_id) {
-        return;
-    }
-    button_t* button = &buttons[event->button];
-    button->was_pressed = button->pressed;
-    button->pressed = (event->state == SDL_PRESSED);
-    IN_SendButtonEvent(button);
-}
-
-static void IN_RemovedControllerEvent(const SDL_ControllerDeviceEvent* event) {
-    if (event->which != gamepad_id) {
-        return;
-    }
-    SDL_GameControllerClose(gamepad);
-    gamepad = NULL;
-    gamepad_id = -1;
-}
-
-static void IN_AddedControllerEvent(const SDL_ControllerDeviceEvent* event) {
-    if (gamepad) {
-        // Already have one gamepad connected.
-        return;
-    }
-    gamepad = SDL_GameControllerOpen(event->which);
-    if (!gamepad) {
-        Con_Printf("\ncould not open joystick: (%s)\n\n", SDL_GetError());
-        return;
-    }
-    SDL_Joystick* joystick = SDL_GameControllerGetJoystick(gamepad);
-    gamepad_id = SDL_JoystickInstanceID(joystick);
-    Con_Printf("\njoystick detected\n\n");
-}
-
-void IN_GamepadEvent(const SDL_Event* event) {
-    if (joy_enable.value == 0) {
-        return;
-    }
-    switch (event->type) {
-        case SDL_CONTROLLERDEVICEADDED:
-            IN_AddedControllerEvent(&event->cdevice);
-            break;
-        case SDL_CONTROLLERDEVICEREMOVED:
-            IN_RemovedControllerEvent(&event->cdevice);
-            break;
-        case SDL_CONTROLLERBUTTONDOWN:
-        case SDL_CONTROLLERBUTTONUP:
-            IN_ButtonEvent(&event->cbutton);
-            break;
-        case SDL_CONTROLLERAXISMOTION:
-            IN_AxisEvent(&event->caxis);
-            break;
-        default:
-            break;
-    }
-}
-
-#endif // !CHOCOLATE_QUAKE_PS3
-
-
-/*
-================================================================================
-
 PS3 (PSL1GHT) BACKEND
 
 ================================================================================
 */
-#ifdef CHOCOLATE_QUAKE_PS3
 
 // DualShock 3 reports the analog sticks as u8 fields centred at 0x80
 // (0 = full left/up, 0xFF = full right/down). Triggers (L2/R2) are u8
@@ -560,8 +466,6 @@ void IN_PollGamepad(void) {
                   axes[PAD_AXIS_RIGHTX].value, axes[PAD_AXIS_RIGHTY].value);
     }
 }
-
-#endif // CHOCOLATE_QUAKE_PS3
 
 
 //==============================================================================
