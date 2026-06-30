@@ -89,8 +89,8 @@ top of `cmake/ps3/make_pkg.sh`.
 | File                                | Purpose                                  |
 |-------------------------------------|------------------------------------------|
 | `cmake/ps3.toolchain.cmake`         | CMake toolchain (ppu-gcc, ps3dev sysroot)|
-| `cmake/ps3/sdl2_net_stub/`          | SDL-free `SDL_net` API stub (ps3dev has  |
-|                                     | no SDL2_net); `src/net/` links here      |
+| `cmake/ps3/ps3_net_stub/`           | PS3 networking stub (no usable net stack |
+|                                     | on ps3dev); `src/net/` links here        |
 | `cmake/ps3/make_pkg.sh`             | Packaging script                         |
 
 ### Native PSL1GHT backends (SDL2 removed)
@@ -118,10 +118,10 @@ The top-level `CMakeLists.txt` links the PSL1GHT runtime libs directly:
   ```bash
   sudo chown -R $USER:$USER build-ps3 chocolate-quake.pkg
   ```
-- **Networking is stubbed.** `src/net/` links against an SDL-free `SDL_net`
-  API stub (`cmake/ps3/sdl2_net_stub/`); every `SDLNet_*` call fails
-  gracefully. LAN/online multiplayer will not work; single-player and demo
-  playback should.
+- **Networking is stubbed.** `src/net/` links against a PS3 networking stub
+  (`cmake/ps3/ps3_net_stub/`); every `PS3Net_*` call fails gracefully.
+  LAN/online multiplayer will not work; single-player and demo playback
+  should.
 - **Runtime data path.** `Sys_GetDefaultBaseDir` hardcodes
   `/dev_hdd0/game/CHQK00001/USRDIR` as the basedir (where `make_pkg.sh`
   installs `id1/` next to `EBOOT.BIN`). If you change the title ID, update

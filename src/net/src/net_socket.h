@@ -25,7 +25,7 @@
 
 #include "quakedef.h"
 #include "net.h"
-#include <SDL_net.h>
+#include <ps3_net.h>
 
 typedef struct qsocket_s {
     struct qsocket_s* next;

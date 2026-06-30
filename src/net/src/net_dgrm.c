@@ -30,7 +30,7 @@
 #include "screen.h"
 #include "server.h"
 #include "sys.h"
-#include <SDL_net.h>
+#include <ps3_net.h>
 
 // This enables a simple IP banning mechanism
 // #define BAN_TEST

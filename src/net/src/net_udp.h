@@ -24,7 +24,7 @@
 #define __NET_UDP__
 
 #include "quakedef.h"
-#include <SDL_net.h>
+#include <ps3_net.h>
 
 qboolean UDP_IsInitialized(void);
 UDPsocket UDP_GetControlSocket(void);

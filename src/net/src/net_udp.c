@@ -25,7 +25,7 @@
 #include "cvar.h"
 #include "net.h"
 #include "sys.h"
-#include <SDL_net.h>
+#include <ps3_net.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -51,13 +51,13 @@ static UDPsocket broadcast_sock = NULL;
 
 
 static qboolean UDP_IsLocalAddr(const IPaddress* addr) {
-    return addr->host == 0 || SDLNet_Read32(&addr->host) == INADDR_LOOPBACK;
+    return addr->host == 0 || PS3Net_Read32(&addr->host) == INADDR_LOOPBACK;
 }
 
 static void UDP_FindLocalAddr(void) {
     IPaddress addrs[10] = {0};
     const i32 count = SDL_arraysize(addrs);
-    SDLNet_GetLocalAddresses(addrs, count);
+    PS3Net_GetLocalAddresses(addrs, count);
     for (i32 i = 0; i < count; i++) {
         if (!UDP_IsLocalAddr(&addrs[i])) {
             my_addr = addrs[i];
@@ -83,8 +83,8 @@ void UDP_Init(void) {
     if (COM_CheckParm("-noudp")) {
         return;
     }
-    if (SDLNet_Init() == -1) {
-        printf("UDP Initialization failed: %s\n", SDLNet_GetError());
+    if (PS3Net_Init() == -1) {
+        printf("UDP Initialization failed: %s\n", PS3Net_GetError());
         return;
     }
 
@@ -104,7 +104,7 @@ void UDP_Init(void) {
     }
 
     broadcast_addr.host = INADDR_BROADCAST;
-    broadcast_addr.port = SDLNet_Read16(&net_hostport);
+    broadcast_addr.port = PS3Net_Read16(&net_hostport);
 
     IPaddress control_addr = UDP_GetSocketAddr(control_sock);
     Q_strcpy(my_tcpip_address, UDP_AddrToString(&control_addr));
@@ -150,21 +150,21 @@ void UDP_Listen(qboolean state) {
 }
 
 UDPsocket UDP_OpenSocket(i32 port) {
-    return SDLNet_UDP_Open((u16) port);
+    return PS3Net_UDP_Open((u16) port);
 }
 
 void UDP_CloseSocket(UDPsocket socket) {
     if (socket == broadcast_sock) {
         broadcast_sock = NULL;
     }
-    SDLNet_UDP_Close(socket);
+    PS3Net_UDP_Close(socket);
 }
 
 i32 UDP_Read(UDPsocket socket, byte* buf, i32 len, IPaddress* addr) {
     UDPpacket packet = {0};
     packet.data = buf;
     packet.maxlen = len;
-    const i32 ret = SDLNet_UDP_Recv(socket, &packet);
+    const i32 ret = PS3Net_UDP_Recv(socket, &packet);
     if (ret == -1 && (errno == EWOULDBLOCK || errno == ECONNREFUSED)) {
         return 0;
     }
@@ -196,7 +196,7 @@ i32 UDP_Write(UDPsocket socket, byte* buf, i32 len, const IPaddress* addr) {
     packet.data = buf;
     packet.len = len;
     packet.address = *addr;
-    if (!SDLNet_UDP_Send(socket, -1, &packet)) {
+    if (!PS3Net_UDP_Send(socket, -1, &packet)) {
         return -1;
     }
     return 1;
@@ -204,8 +204,8 @@ i32 UDP_Write(UDPsocket socket, byte* buf, i32 len, const IPaddress* addr) {
 
 char* UDP_AddrToString(const IPaddress* addr) {
     static char buffer[22];
-    const u32 host = SDLNet_Read32(&addr->host);
-    const u16 port = SDLNet_Read16(&addr->port);
+    const u32 host = PS3Net_Read32(&addr->host);
+    const u16 port = PS3Net_Read16(&addr->port);
     sprintf(buffer, "%d.%d.%d.%d:%d",
         (host >> 24) & 0xff,
         (host >> 16) & 0xff,
@@ -218,7 +218,7 @@ char* UDP_AddrToString(const IPaddress* addr) {
 
 IPaddress UDP_GetSocketAddr(UDPsocket socket) {
     IPaddress addr = {0};
-    const IPaddress* sock_addr = SDLNet_UDP_GetPeerAddress(socket, -1);
+    const IPaddress* sock_addr = PS3Net_UDP_GetPeerAddress(socket, -1);
     addr.host = sock_addr->host;
     addr.port = sock_addr->port;
     if (UDP_IsLocalAddr(sock_addr)) {
@@ -228,7 +228,7 @@ IPaddress UDP_GetSocketAddr(UDPsocket socket) {
 }
 
 void UDP_GetNameFromAddr(const IPaddress* addr, char* name) {
-    char* host_name = (char*) SDLNet_ResolveIP(addr);
+    char* host_name = (char*) PS3Net_ResolveIP(addr);
     if (host_name) {
         Q_strncpy(name, host_name, NET_NAMELEN - 1);
         return;
@@ -250,7 +250,7 @@ i32 UDP_GetAddrFromName(char* name, IPaddress* addr) {
     } else {
         port = (u16) net_hostport;
     }
-    return SDLNet_ResolveHost(addr, host, port);
+    return PS3Net_ResolveHost(addr, host, port);
 }
 
 i32 UDP_AddrCompare(const IPaddress* addr1, const IPaddress* addr2) {
@@ -264,10 +264,10 @@ i32 UDP_AddrCompare(const IPaddress* addr1, const IPaddress* addr2) {
 }
 
 i32 UDP_GetSocketPort(const IPaddress* addr) {
-    return SDLNet_Read16(&addr->port);
+    return PS3Net_Read16(&addr->port);
 }
 
 
 void UDP_SetSocketPort(IPaddress* addr, i32 port) {
-    SDLNet_Write16(port, &addr->port);
+    PS3Net_Write16(port, &addr->port);
 }

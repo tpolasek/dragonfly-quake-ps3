@@ -26,7 +26,7 @@
 #include "quakedef.h"
 #include "protocol.h"
 #include "cvar.h"
-#include <SDL_net.h>
+#include <ps3_net.h>
 
 
 #define NET_NAMELEN 64

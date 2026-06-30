@@ -23,9 +23,9 @@ target_link_libraries(${LIB} PUBLIC common console)
 
 # PS3 net stub (SDL-free) — networking unavailable, fails gracefully.
 add_library(ps3_net_stub STATIC
-    "${CMAKE_SOURCE_DIR}/cmake/ps3/sdl2_net_stub/sdl_net_stub.c")
+    "${CMAKE_SOURCE_DIR}/cmake/ps3/ps3_net_stub/ps3_net_stub.c")
 target_include_directories(ps3_net_stub PUBLIC
-    "${CMAKE_SOURCE_DIR}/cmake/ps3/sdl2_net_stub/include")
+    "${CMAKE_SOURCE_DIR}/cmake/ps3/ps3_net_stub/include")
 target_link_libraries(${LIB} PUBLIC ps3_net_stub)
 
 target_link_libraries(${LIB} PRIVATE
