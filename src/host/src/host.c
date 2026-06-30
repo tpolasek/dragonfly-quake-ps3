@@ -42,6 +42,7 @@
 #include <SDL.h>
 #endif
 #include <stdarg.h>
+#include <stdlib.h>
 #include <string.h>
 
 
