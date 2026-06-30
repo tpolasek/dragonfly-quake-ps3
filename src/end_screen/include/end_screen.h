@@ -24,6 +24,11 @@
 
 #include "quakedef.h"
 
+#ifdef CHOCOLATE_QUAKE_PS3
+// End screen disabled on PS3 — provide a no-op so call sites compile.
+static inline void ES_DisplayScreen(void) {}
+#else
 void ES_DisplayScreen(void);
+#endif
 
 #endif

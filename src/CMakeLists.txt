@@ -11,7 +11,6 @@ set(LIBS
     common
     console
     crc
-    end_screen
     host
     input
     mathlib

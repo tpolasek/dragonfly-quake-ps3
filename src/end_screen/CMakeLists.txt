@@ -1,3 +1,8 @@
+if(CHOCOLATE_QUAKE_PS3)
+    # End screen disabled on PS3 (game exits to XMB on quit).
+    return()
+endif()
+
 set(LIB end_screen)
 
 add_library(${LIB} STATIC
