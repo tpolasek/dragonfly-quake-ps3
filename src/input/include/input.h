@@ -30,16 +30,8 @@ void IN_Init(void);
 
 void IN_Shutdown(void);
 
-#ifdef CHOCOLATE_QUAKE_PS3
 // PS3 polls the pad directly via PSL1GHT (no SDL_GameController path).
 void IN_PollGamepad(void);
-#else
-// Desktop builds pump SDL events from Sys_SendKeyEvents; callers that use
-// these declarations must include <SDL_events.h> themselves.
-void IN_KeyboardEvent(const SDL_Event* event);
-void IN_MouseEvent(const SDL_Event* event);
-void IN_GamepadEvent(const SDL_Event* event);
-#endif
 
 // add additional movement on top of the keyboard move cmd
 void IN_Move(usercmd_t* cmd);

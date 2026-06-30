@@ -33,12 +33,7 @@
 // game-controller mapping and the Bluetooth pad-rumble layer added
 // latency. PSL1GHT gives us a padData bitfield with named BTN_CROSS /
 // BTN_TRIANGLE / etc. fields, so we read those directly.
-#ifdef CHOCOLATE_QUAKE_PS3
 void IN_PollGamepad(void);
-#else
-#include <SDL_events.h>
-void IN_GamepadEvent(const SDL_Event* event);
-#endif
 
 void IN_JoyMove(usercmd_t* cmd);
 

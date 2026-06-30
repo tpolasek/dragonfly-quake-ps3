@@ -38,9 +38,6 @@
 #include "sys.h"
 #include "view.h"
 #include "wad.h"
-#ifndef CHOCOLATE_QUAKE_PS3
-#include <SDL.h>
-#endif
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
@@ -661,14 +658,10 @@ void _Host_Frame(float time) {
     if (host_speeds.value)
         time1 = Sys_FloatTime();
 
-#ifdef CHOCOLATE_QUAKE_PS3
     SYS_TRACE("[frame] %d before SCR_UpdateScreen\n", host_framecount);
-#endif
     SCR_UpdateScreen();
-#ifdef CHOCOLATE_QUAKE_PS3
     SYS_TRACE("[frame] %d after SCR_UpdateScreen / before S_Update\n",
               host_framecount);
-#endif
 
     if (host_speeds.value) {
         time2 = Sys_FloatTime();
@@ -682,14 +675,10 @@ void _Host_Frame(float time) {
         S_Update(vec3_origin, vec3_origin, vec3_origin, vec3_origin);
     }
 
-#ifdef CHOCOLATE_QUAKE_PS3
     SYS_TRACE("[frame] %d after S_Update / before BGMusic_Update\n",
               host_framecount);
-#endif
     BGMusic_Update();
-#ifdef CHOCOLATE_QUAKE_PS3
     SYS_TRACE("[frame] %d END\n", host_framecount);
-#endif
 
     if (host_speeds.value) {
         pass1 = (time1 - time3) * 1000;
@@ -702,7 +691,6 @@ void _Host_Frame(float time) {
 
     host_framecount++;
 
-#ifdef CHOCOLATE_QUAKE_PS3
     // Periodic stack high-water probe: every 64 frames report bytes used
     // against the 2 MB worker stack. If `used` climbs toward PS3_GAME_STACK
     // we're heading for a silent overflow.
@@ -723,7 +711,6 @@ void _Host_Frame(float time) {
                   host_framecount, hunk_size, hunk_low_used, hunk_high_used,
                   hunk_size - hunk_low_used - hunk_high_used);
     }
-#endif
 }
 
 void Host_Frame(float time) {
@@ -818,11 +805,6 @@ void Host_InitVCR(quakeparms_t* parms) {
 }
 
 void Host_InitTimer() {
-#ifndef CHOCOLATE_QUAKE_PS3
-    if (SDL_Init(SDL_INIT_TIMER) < 0) {
-        Sys_Error("Failed to initialize timer: %s\n", SDL_GetError());
-    }
-#endif
 }
 
 /*
@@ -935,9 +917,6 @@ void Host_Init(quakeparms_t* parms) {
 }
 
 void Host_ShutdownTimer() {
-#ifndef CHOCOLATE_QUAKE_PS3
-    SDL_QuitSubSystem(SDL_INIT_TIMER);
-#endif
 }
 
 /*
@@ -971,8 +950,4 @@ void Host_Shutdown() {
     if (cls.state != ca_dedicated) {
         VID_Shutdown();
     }
-
-#ifndef CHOCOLATE_QUAKE_PS3
-    SDL_Quit();
-#endif
 }

@@ -23,23 +23,15 @@
 #include "client.h"
 #include "cmd.h"
 #include "config.h"
-#include "end_screen.h"
 #include "input.h"
 #include "keys.h"
 #include "menu.h"
-#ifndef CHOCOLATE_QUAKE_PS3
-#include <SDL_events.h>
-#include <SDL_filesystem.h>
-#include <SDL_hints.h>
-#include <SDL_timer.h>
-#endif
 #include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <string.h>
 #include <unistd.h>
 
-#ifdef CHOCOLATE_QUAKE_PS3
 // PS3 sysutil API: lets us intercept the PS button (XMB overlay open/close)
 // and the "Quit Game" XMB command so the OS doesn't yank the rug out from
 // under us mid-frame.
@@ -50,7 +42,6 @@
 // Sys_Error / Sys_Quit reference them.
 static void Sys_OpenLog(void);
 static void Sys_FlushLog(void);
-#endif
 
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
@@ -170,15 +161,8 @@ SYSTEM IO
 */
 
 static void Sys_ShowErrorModal(const char* msg) {
-#ifdef CHOCOLATE_QUAKE_PS3
     fprintf(stdout, "ERROR: %s\n", msg);
     Sys_FlushLog();
-#else
-    u32 flags = SDL_MESSAGEBOX_ERROR;
-    const char* title = PACKAGE_STRING;
-    SDL_Window* window = NULL;
-    SDL_ShowSimpleMessageBox(flags, title, msg, window);
-#endif
 }
 
 void Sys_Error(char* error, ...) {
@@ -190,14 +174,10 @@ void Sys_Error(char* error, ...) {
     va_end(argptr);
 
     fflush(stdout);
-#ifdef CHOCOLATE_QUAKE_PS3
     // stdout is redirected to the log file; route the error there so we
     // can read it back over FTP after the crash.
     fprintf(stdout, "Error: %s\n", string);
     Sys_FlushLog();
-#else
-    fprintf(stderr, "Error: %s\n", string);
-#endif
     Sys_ShowErrorModal(string);
 
     Host_Shutdown();
@@ -214,16 +194,11 @@ void Sys_Printf(char* fmt, ...) {
 
 void Sys_Quit(void) {
     Host_Shutdown();
-#ifdef CHOCOLATE_QUAKE_PS3
     Sys_FlushLog();
-#else
-    ES_DisplayScreen();
-#endif
     exit(0);
 }
 
 double Sys_FloatTime() {
-#ifdef CHOCOLATE_QUAKE_PS3
     static double start_time = 0.0;
     if (start_time == 0.0) {
         // sysGetSystemTime returns microseconds since some epoch
@@ -232,19 +207,6 @@ double Sys_FloatTime() {
     }
     double now = (double) sysGetSystemTime() / 1000000.0;
     return now - start_time;
-#else
-    static double frequency = 0.0;
-    static u64 start_time = 0;
-
-    if (start_time == 0) {
-        frequency = (double) SDL_GetPerformanceFrequency();
-        start_time = SDL_GetPerformanceCounter();
-        return (double) start_time / frequency;
-    }
-    u64 now = SDL_GetPerformanceCounter();
-    double time_diff = (double) (now - start_time);
-    return time_diff / frequency;
-#endif
 }
 
 char* Sys_ConsoleInput(void) {
@@ -271,37 +233,8 @@ static void Sys_QuitEvent(void) {
 }
 
 void Sys_SendKeyEvents() {
-#ifdef CHOCOLATE_QUAKE_PS3
     // Pad polling is all we need on PS3 (no keyboard/mouse).
     IN_PollGamepad();
-#else
-    SDL_Event event;
-    while (SDL_PollEvent(&event)) {
-        switch (event.type) {
-            case SDL_KEYDOWN:
-            case SDL_KEYUP:
-                IN_KeyboardEvent(&event);
-                break;
-            case SDL_MOUSEBUTTONDOWN:
-            case SDL_MOUSEBUTTONUP:
-            case SDL_MOUSEWHEEL:
-                IN_MouseEvent(&event);
-                break;
-            case SDL_CONTROLLERDEVICEADDED:
-            case SDL_CONTROLLERDEVICEREMOVED:
-            case SDL_CONTROLLERBUTTONDOWN:
-            case SDL_CONTROLLERBUTTONUP:
-            case SDL_CONTROLLERAXISMOTION:
-                IN_GamepadEvent(&event);
-                break;
-            case SDL_QUIT:
-                Sys_QuitEvent();
-                break;
-            default:
-                break;
-        }
-    }
-#endif
 }
 
 //==============================================================================
@@ -345,10 +278,6 @@ static void Sys_SigHook(int sig) {
 #endif
 
 static void Sys_SigInit(void) {
-#ifndef CHOCOLATE_QUAKE_PS3
-    // Disable SDL default signal handlers
-    SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");
-#endif
     Sys_SigHook(SIGINT);
     Sys_SigHook(SIGTERM);
 }
@@ -359,13 +288,8 @@ static void Sys_SigInit(void) {
 
 // Desktop builds happily grab 256 MB. PS3 has only 256 MB of main RAM
 // (shared with the OS and SDL2/RSX framebuffer), so cap the heap lower.
-#ifdef CHOCOLATE_QUAKE_PS3
 #define DEFAULT_MEMORY (128 * 1024 * 1024)
-#else
-#define DEFAULT_MEMORY (256 * 1024 * 1024)
-#endif
 
-#ifdef CHOCOLATE_QUAKE_PS3
 // On PS3 there's no stdout/stderr to capture, so write a log file next to
 // EBOOT.BIN so we can FTP it back and see where the game died. Opened at
 // the very start of Sys_Init; everything that goes through printf /
@@ -437,12 +361,8 @@ qboolean Sys_XmbMenuOpen(void) {
     sysUtilCheckCallback();
     return xmb_menu_open;
 }
-#endif
 
 static char* Sys_GetDefaultBaseDir(void) {
-#ifdef _WIN32
-    return ".";
-#elif defined(CHOCOLATE_QUAKE_PS3)
     // On PS3, the .pkg ships id1/ next to EBOOT.BIN under the title's
     // USRDIR (e.g. /dev_hdd0/game/<TITLE_ID>/USRDIR/). The PSL1GHT SDL2
     // build returns NULL from SDL_GetBasePath(), so we hardcode the
@@ -451,16 +371,6 @@ static char* Sys_GetDefaultBaseDir(void) {
     #define PS3_BASE_DIR "/dev_hdd0/game/CHQK00001/USRDIR"
     SYS_TRACE("Sys_GetDefaultBaseDir: PS3 hardcoding '%s'\n", PS3_BASE_DIR);
     return PS3_BASE_DIR;
-#else
-    static char base_dir[MAX_OSPATH] = {0};
-    if (base_dir[0]) {
-        return base_dir;
-    }
-    char* path = SDL_GetPrefPath("", PACKAGE_TARNAME);
-    Q_strncpy(base_dir, path, MAX_OSPATH);
-    SDL_free(path);
-    return base_dir;
-#endif
 }
 
 static quakeparms_t* Sys_InitParms(i32 argc, char** argv) {
@@ -492,7 +402,6 @@ static quakeparms_t* Sys_InitParms(i32 argc, char** argv) {
 }
 
 quakeparms_t* Sys_Init(i32 argc, char* argv[]) {
-#ifdef CHOCOLATE_QUAKE_PS3
     // Open the log file before anything else can fail, so we capture
     // startup messages and any Sys_Error output.
     SYS_TRACE("Sys_Init: opening log\n");
@@ -504,7 +413,6 @@ quakeparms_t* Sys_Init(i32 argc, char* argv[]) {
         fprintf(stderr, "sysUtilRegisterCallback failed\n");
     }
     SYS_TRACE("Sys_Init: sysutil callback registered\n");
-#endif
 #ifdef HAVE_SIGNAL_H
     SYS_TRACE("Sys_Init: calling Sys_SigInit\n");
     Sys_SigInit();

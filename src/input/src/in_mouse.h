@@ -25,9 +25,6 @@
 
 #include "quakedef.h"
 #include "client.h"
-#ifndef CHOCOLATE_QUAKE_PS3
-#include <SDL_events.h>
-#endif
 
 void IN_ActivateMouse(void);
 
@@ -36,10 +33,6 @@ void IN_DeactivateMouse(void);
 void IN_ShowMouse(void);
 
 void IN_HideMouse(void);
-
-#ifndef CHOCOLATE_QUAKE_PS3
-void IN_MouseEvent(const SDL_Event* event);
-#endif
 
 void IN_MouseMove(usercmd_t* cmd);
 

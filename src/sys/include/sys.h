@@ -100,16 +100,12 @@ qboolean Sys_XmbMenuOpen(void);
 // ~130 trace call sites spread across the codebase, making it hard to
 // debug specific subsystems. To enable tracing in a file, add
 // `#define SYS_TRACE_ACTIVE 1` at the top before any #include.
-#ifdef CHOCOLATE_QUAKE_PS3
 #include <stdio.h>
 #ifdef SYS_TRACE_ACTIVE
 #define SYS_TRACE(...) do { \
     fprintf(stdout, "[trace] " __VA_ARGS__); \
     fflush(stdout); \
 } while (0)
-#else
-#define SYS_TRACE(...) ((void)0)
-#endif
 #else
 #define SYS_TRACE(...) ((void)0)
 #endif

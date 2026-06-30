@@ -58,8 +58,6 @@ i32 r_clipflags;
 
 byte* r_warpbuffer;
 
-byte* r_stack_start;
-
 qboolean r_fov_greater_than_90;
 
 //
@@ -186,11 +184,6 @@ R_Init
 ===============
 */
 void R_Init(void) {
-    i32 dummy;
-
-    // get stack position so we can guess if we are going to overflow
-    r_stack_start = (byte*) &dummy;
-
     R_InitTurb();
 
     Cmd_AddCommand("timerefresh", R_TimeRefresh_f);
@@ -569,9 +562,7 @@ void R_DrawViewModel(void) {
     float add;
     dlight_t* dl;
 
-#ifdef CHOCOLATE_QUAKE_PS3
     SYS_TRACE("ENTER R_DrawViewModel\n");
-#endif
 
     if (!r_drawviewmodel.value || r_fov_greater_than_90)
         return;
@@ -624,9 +615,7 @@ void R_DrawViewModel(void) {
     r_viewlighting.plightvec = lightvec;
 
     R_AliasDrawModel(&r_viewlighting);
-#ifdef CHOCOLATE_QUAKE_PS3
     SYS_TRACE("EXIT  R_DrawViewModel\n");
-#endif
 }
 
 
@@ -933,14 +922,10 @@ void R_RenderView_(void) {
         dp_time1 = Sys_FloatTime();
     }
 
-#ifdef CHOCOLATE_QUAKE_PS3
     SYS_TRACE("[render] before R_DrawParticles\n");
-#endif
     R_DrawParticles();
-#ifdef CHOCOLATE_QUAKE_PS3
     SYS_TRACE("[render] after R_DrawParticles / before D_WarpScreen (dowarp=%d)\n",
               r_dowarp ? 1 : 0);
-#endif
 
     if (r_dspeeds.value)
         dp_time2 = Sys_FloatTime();
@@ -948,14 +933,10 @@ void R_RenderView_(void) {
     if (r_dowarp)
         D_WarpScreen();
 
-#ifdef CHOCOLATE_QUAKE_PS3
     SYS_TRACE("[render] after D_WarpScreen / before V_SetContentsColor "
               "(viewleaf=%p)\n", (void*) r_viewleaf);
-#endif
     V_SetContentsColor(r_viewleaf->contents);
-#ifdef CHOCOLATE_QUAKE_PS3
     SYS_TRACE("[render] after V_SetContentsColor\n");
-#endif
 
     if (r_timegraph.value)
         R_TimeGraph();
@@ -977,26 +958,11 @@ void R_RenderView_(void) {
 
     // back to high floating-point precision
     Sys_HighFPPrecision();
-#ifdef CHOCOLATE_QUAKE_PS3
     SYS_TRACE("[render] END R_RenderView_\n");
-#endif
 }
 
 void R_RenderView(void) {
     i32 dummy;
-    i32 delta;
-
-    delta = (byte*) &dummy - r_stack_start;
-#ifndef CHOCOLATE_QUAKE_PS3
-    // This check was a DOS-era guard against calling the renderer from a
-    // call chain so deep that the renderer's own stack usage would
-    // overflow. On PS3 we run on a 2 MB worker thread stack and the
-    // call chain depth differs between R_Init (Host_Init, where
-    // r_stack_start is captured) and R_RenderView (frame loop), so the
-    // check fires spuriously.
-    if (delta < -10000 || delta > 10000)
-        Sys_Error("R_RenderView: called without enough stack");
-#endif
 
     if (Hunk_LowMark() & 3)
         Sys_Error("Hunk is missaligned");

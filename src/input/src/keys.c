@@ -396,10 +396,8 @@ void Key_SetBinding(i32 keynum, char* binding) {
     Q_strcpy(new, binding);
     new[l] = 0;
     keybindings[keynum] = new;
-#ifdef CHOCOLATE_QUAKE_PS3
     SYS_TRACE("[keys] bound [%d] -> \"%s\" (stored at %p)\n",
               (int) keynum, keybindings[keynum], (void*) keybindings[keynum]);
-#endif
 }
 
 /*
@@ -562,7 +560,6 @@ void Key_Init(void) {
     Cmd_AddCommand("unbind", Key_Unbind_f);
     Cmd_AddCommand("unbindall", Key_Unbindall_f);
 
-#ifdef CHOCOLATE_QUAKE_PS3
     // Default DualShock 3 bindings. id1/ in this port ships no
     // default.cfg (Quake 1's original is keyboard-only anyway), and
     // there's no auto-exec of config.cfg on startup, so without these
@@ -599,7 +596,6 @@ void Key_Init(void) {
         "bind RIGHTARROW \"impulse 4\"\n"   // D-Right - nailgun
         "bind TAB \"toggleconsole\"\n"      // Select  - console
     );
-#endif
 }
 
 //
@@ -719,12 +715,10 @@ void Key_Event(i32 key, qboolean down) {
         (key_dest == key_console && !consolekeys[key]) ||
         (key_dest == key_game && (!con_forcedup || !consolekeys[key]))) {
         kb = keybindings[key];
-#ifdef CHOCOLATE_QUAKE_PS3
         SYS_TRACE("[keys] Key_Event key=%d down=%d key_dest=%d "
                   "con_forcedup=%d binding=\"%s\"\n",
                   (int) key, (int) down, (int) key_dest,
                   (int) con_forcedup, kb ? kb : "(null)");
-#endif
         if (kb) {
             if (kb[0] == '+') { // button commands add keynum as a parm
                 sprintf(cmd, "%s %i\n", kb, key);

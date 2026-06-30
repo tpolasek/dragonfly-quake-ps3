@@ -894,15 +894,12 @@ void SCR_UpdateScreen(void) {
         D_UpdateRects(pconupdate);
     }
 
-#ifdef CHOCOLATE_QUAKE_PS3
     SYS_TRACE("[screen] before V_UpdatePalette\n");
-#endif
     V_UpdatePalette();
-#ifdef CHOCOLATE_QUAKE_PS3
     SYS_TRACE("[screen] after V_UpdatePalette / before VID_Update "
               "(copyeverything=%d copytop=%d)\n",
               scr_copyeverything ? 1 : 0, scr_copytop ? 1 : 0);
-#endif
+
 
     //
     // update one of three areas
@@ -930,9 +927,7 @@ void SCR_UpdateScreen(void) {
 
         VID_Update(&vrect);
     }
-#ifdef CHOCOLATE_QUAKE_PS3
     SYS_TRACE("[screen] END SCR_UpdateScreen\n");
-#endif
 }
 
 

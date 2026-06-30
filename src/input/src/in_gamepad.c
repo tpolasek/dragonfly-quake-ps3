@@ -552,7 +552,6 @@ static void IN_MoveCamera(const analog_stick_t* look) {
     // coming from somewhere other than the pad path (e.g. a stuck
     // +left/+right kbutton). If these lines show look=(0.05, 0) with the
     // stick at rest, drift is leaking past the deadzone.
-#ifdef CHOCOLATE_QUAKE_PS3
     if (look->x != 0.0f || look->y != 0.0f) {
         SYS_TRACE("[pad] cam: look=(%.3f,%.3f) yaw -= %.3f*%.0f*%.4f = %.4f "
                   "viewangles[YAW]=%.2f\n",
@@ -561,7 +560,6 @@ static void IN_MoveCamera(const analog_stick_t* look) {
                   -look->x * joy_sensitivity_yaw.value * time,
                   cl.viewangles[YAW]);
     }
-#endif
 
     float joy_sensitivity = joy_sensitivity_yaw.value;
     cl.viewangles[YAW] -= look->x * joy_sensitivity * time;

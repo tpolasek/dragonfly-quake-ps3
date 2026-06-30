@@ -70,28 +70,20 @@ Caches the data if needed
 void* Mod_Extradata(model_t* mod) {
     void* r;
 
-#ifdef CHOCOLATE_QUAKE_PS3
     SYS_TRACE("ENTER Mod_Extradata (mod=%s)\n", mod->name);
-#endif
 
     r = Cache_Check(&mod->cache);
     if (r) {
-#ifdef CHOCOLATE_QUAKE_PS3
         SYS_TRACE("EXIT  Mod_Extradata (cache hit)\n");
-#endif
         return r;
     }
 
-#ifdef CHOCOLATE_QUAKE_PS3
     SYS_TRACE("       Mod_Extradata: cache MISS -- calling Mod_LoadModel\n");
-#endif
     Mod_LoadModel(mod, true);
 
     if (!mod->cache.data)
         Sys_Error("Mod_Extradata: caching failed");
-#ifdef CHOCOLATE_QUAKE_PS3
     SYS_TRACE("EXIT  Mod_Extradata (cache miss, loaded)\n");
-#endif
     return mod->cache.data;
 }
 
@@ -258,9 +250,7 @@ model_t* Mod_LoadModel(model_t* mod, qboolean crash) {
     u32* buf;
     byte stackbuf[1024]; // avoid dirtying the cache heap
 
-#ifdef CHOCOLATE_QUAKE_PS3
     SYS_TRACE("ENTER Mod_LoadModel (mod=%s crash=%d)\n", mod->name, crash);
-#endif
 
     if (mod->type == mod_alias) {
         if (Cache_Check(&mod->cache)) {
@@ -314,9 +304,7 @@ model_t* Mod_LoadModel(model_t* mod, qboolean crash) {
             break;
     }
 
-#ifdef CHOCOLATE_QUAKE_PS3
     SYS_TRACE("EXIT  Mod_LoadModel (loaded %s)\n", mod->name);
-#endif
     return mod;
 }
 

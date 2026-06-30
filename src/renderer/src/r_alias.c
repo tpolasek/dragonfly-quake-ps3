@@ -656,7 +656,6 @@ void R_AliasDrawModel(alight_t* plighting) {
                            ((CACHE_SIZE - 1) / sizeof(finalvert_t)) + 1];
     auxvert_t auxverts[MAXALIASVERTS];
 
-#ifdef CHOCOLATE_QUAKE_PS3
     SYS_TRACE("ENTER R_AliasDrawModel (model=%s)\n",
               currententity && currententity->model
                   ? currententity->model->name
@@ -672,7 +671,6 @@ void R_AliasDrawModel(alight_t* plighting) {
                       (int)(ps3_stack_bottom - &probe));
         }
     }
-#endif
 
     r_amodels_drawn++;
 
@@ -711,7 +709,5 @@ void R_AliasDrawModel(alight_t* plighting) {
     else
         R_AliasPreparePoints();
 
-#ifdef CHOCOLATE_QUAKE_PS3
     SYS_TRACE("EXIT  R_AliasDrawModel\n");
-#endif
 }

@@ -22,7 +22,6 @@
 #include "host.h"
 #include "sys.h"
 
-#ifdef CHOCOLATE_QUAKE_PS3
 #include <unistd.h>
 #include <sys/thread.h>
 #include <sys/process.h>
@@ -46,9 +45,7 @@ static char**           g_game_argv;
 // highest used address). Deep frames (R_AliasDrawModel ~88 KB,
 // R_RenderWorld ~80 KB) sit at lower addresses. Other TUs probe this with
 // `ps3_stack_bottom - &probe` to get bytes-used-so-far.
-#ifdef CHOCOLATE_QUAKE_PS3
 char *ps3_stack_bottom = 0;
-#endif
 
 // The actual game entry point -- what main() used to do directly.
 static void Quake_Run(int argc, char** argv) {
@@ -84,11 +81,9 @@ static void Quake_GameThread(void* arg) {
     Quake_Run(g_game_argc, g_game_argv);
     sysThreadExit(0);
 }
-#endif
 
 
 int main(int argc, char* argv[]) {
-#ifdef CHOCOLATE_QUAKE_PS3
     g_game_argc = argc;
     g_game_argv = argv;
     s32 rc = sysThreadCreate(&g_game_thread_id, Quake_GameThread, NULL,
@@ -105,16 +100,4 @@ int main(int argc, char* argv[]) {
     sysThreadJoin(g_game_thread_id, &exit_code);
     sysProcessExit(1);
     return (int) exit_code;
-#else
-    quakeparms_t* parms = Sys_Init(argc, argv);
-    Host_Init(parms);
-
-    double old_time = Sys_FloatTime();
-    while (true) {
-        double new_time = Sys_FloatTime();
-        double dt = new_time - old_time;
-        Host_Frame((float) dt);
-        old_time = new_time;
-    }
-#endif
 }

@@ -850,10 +850,8 @@ Cache_Alloc
 void* Cache_Alloc(cache_user_t* c, i32 size, char* name) {
     cache_system_t* cs;
 
-#ifdef CHOCOLATE_QUAKE_PS3
     SYS_TRACE("ENTER Cache_Alloc (name=%s size=%d)\n",
               name ? name : "(null)", size);
-#endif
 
     if (c->data)
         Sys_Error("Cache_Alloc: allready allocated");
@@ -878,16 +876,12 @@ void* Cache_Alloc(cache_user_t* c, i32 size, char* name) {
             Sys_Error("Cache_Alloc: out of memory");
         // not enough memory at all
         Cache_Free(cache_head.lru_prev->user);
-#ifdef CHOCOLATE_QUAKE_PS3
         SYS_TRACE("       Cache_Alloc: evicted LRU, retrying (%s)\n",
                   name ? name : "(null)");
-#endif
     }
 
-#ifdef CHOCOLATE_QUAKE_PS3
     SYS_TRACE("EXIT  Cache_Alloc (name=%s size=%d)\n",
               name ? name : "(null)", size);
-#endif
     return Cache_Check(c);
 }
 

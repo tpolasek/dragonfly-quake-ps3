@@ -14,8 +14,6 @@
 
 #include "sys.h"
 
-#ifdef CHOCOLATE_QUAKE_PS3
-
 #include <malloc.h>
 #include <rsx/rsx.h>
 #include <rsx/gcm_sys.h>
@@ -168,5 +166,3 @@ void VID_PS3_Present(const void *src_pixels, int src_w, int src_h) {
 qboolean VID_PS3_IsReady(void) {
     return s_initialized;
 }
-
-#endif // CHOCOLATE_QUAKE_PS3
