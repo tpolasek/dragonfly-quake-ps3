@@ -18,7 +18,6 @@ add_library(${LIB} STATIC
 
 target_include_directories(${LIB} PRIVATE ${CMAKE_BINARY_DIR} "../")
 target_include_directories(${LIB} PUBLIC "./include")
-target_link_libraries(${LIB} PUBLIC ${SDL2_LIBRARIES})
 target_link_libraries(${LIB} PRIVATE
     cmd
     console

@@ -29,29 +29,24 @@ if(MATH)
 endif()
 
 if(CHOCOLATE_QUAKE_PS3)
-	# PS3 (PPU/PSL1GHT) path: ps3dev ships SDL2 + audio codec libs but no
-	# SDL2_net (and SDL1's SDL_net is ABI-incompatible). Use sdl2-config for
-	# SDL2 and a stub library for SDL2_net so the project links unchanged.
+	# PS3 (PPU/PSL1GHT) path: native PSL1GHT APIs, no SDL2.
 	#
 	# Expose CHOCOLATE_QUAKE_PS3 to source so platform branches (e.g.
 	# Sys_GetDefaultBaseDir in src/sys) can pick the PS3 layout.
 	add_compile_definitions(CHOCOLATE_QUAKE_PS3=1)
-	find_package(SDL2 REQUIRED)
-	add_library(ps3_sdl2_net_stub STATIC
-		"${CMAKE_CURRENT_SOURCE_DIR}/cmake/ps3/sdl2_net_stub/sdl_net_stub.c")
-	target_include_directories(ps3_sdl2_net_stub PUBLIC
-		"${CMAKE_CURRENT_SOURCE_DIR}/cmake/ps3/sdl2_net_stub/include")
-	target_link_libraries(ps3_sdl2_net_stub PUBLIC SDL2::SDL2)
-	add_library(SDL2_net::SDL2_net-static ALIAS ps3_sdl2_net_stub)
-	add_library(SDL2_net::SDL2_net ALIAS ps3_sdl2_net_stub)
 
-	# Codec headers (vorbis/vorbisfile.h, mad.h, FLAC/stream_decoder.h) all
-	# live in the ps3dev portlibs include dir; expose it globally so the
-	# find_library calls below (which only resolve .a paths) don't need
-	# per-target include wiring. The ppu/include dir holds the PSL1GHT SDK
-	# headers (sysutil/sysutil.h, etc.) which also aren't on the compiler's
-	# default search path.
+	# PSL1GHT SDK headers (sysutil/sysutil.h, rsx/*.h, audio/audio.h,
+	# io/pad.h, etc.) live in ppu/include; codec headers (vorbis/vorbisfile.h,
+	# mad.h, FLAC/stream_decoder.h) live in the portlibs include dir. Neither
+	# is on the compiler's default search path.
 	include_directories("${PS3DEV}/portlibs/ppu/include" "${PS3DEV}/ppu/include")
+
+	# PSL1GHT runtime libraries (were transitively pulled in by SDL2 before
+	# its removal). Applied globally so every target links them. -lm is
+	# required by the codec libs (vorbis/FLAC); find_library(MATH m) at the
+	# top of this file can't see it because CMAKE_FIND_ROOT_PATH points at
+	# the install prefix, not the powerpc64-ps3-elf sysroot where libm.a lives.
+	link_libraries(-lgcm_sys -lrsx -lsysutil -lio -laudio -lrt -llv2 -lm)
 
 	find_library(VORBIS_LIBRARY vorbis REQUIRED)
 	find_library(VORBISFILE_LIBRARY vorbisfile REQUIRED)
