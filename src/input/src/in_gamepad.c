@@ -588,22 +588,15 @@ void IN_JoyMove(usercmd_t* cmd) {
     if (joy_enable.value == 0) {
         return;
     }
-#ifdef CHOCOLATE_QUAKE_PS3
     if (!gamepad_connected) {
         return;
     }
-#else
-    if (!gamepad) {
-        return;
-    }
-#endif
     if (cl.paused || key_dest != key_game) {
         return;
     }
     analog_stick_t left;
     analog_stick_t right;
     IN_ReadAnalogSticks(&left, &right);
-#ifdef CHOCOLATE_QUAKE_PS3
     // Periodic post-deadzone dump. These are the values actually fed to
     // IN_MovePlayer / IN_MoveCamera. If these are zero with the stick at
     // rest but the camera still spins, the cause is upstream of the pad.
@@ -615,7 +608,6 @@ void IN_JoyMove(usercmd_t* cmd) {
                   left.x, left.y, right.x, right.y,
                   (int) cmd->forwardmove, (int) cmd->sidemove);
     }
-#endif
     IN_MovePlayer(cmd, &left);
     IN_MoveCamera(&right);
 }
@@ -653,7 +645,6 @@ void IN_InitGamepad(void) {
         // Abort startup if user requests no joystick.
         return;
     }
-#ifdef CHOCOLATE_QUAKE_PS3
     // PSL1GHT io/pad.h -- bypass SDL_GameController entirely.
     // 7 is MAX_PORT_NUM (the PS3 supports up to 7 pads over Bluetooth).
     SYS_TRACE("[pad] ioPadInit(7)\n");
@@ -663,29 +654,14 @@ void IN_InitGamepad(void) {
         return;
     }
     SYS_TRACE("[pad] ioPadInit ok\n");
-#else
-    if (SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER) < 0) {
-        Con_Printf("Couldn't init game controller: %s\n", SDL_GetError());
-        return;
-    }
-    SDL_GameControllerEventState(SDL_ENABLE);
-#endif
 }
 
 void IN_ShutdownGamepad(void) {
-#ifdef CHOCOLATE_QUAKE_PS3
     if (gamepad_connected) {
         IN_PS3_ReleaseAll();
         gamepad_connected = false;
     }
     ioPadEnd();
-#else
-    if (gamepad) {
-        SDL_GameControllerClose(gamepad);
-        gamepad = NULL;
-    }
-    SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER);
-#endif
 }
 
 //==============================================================================
