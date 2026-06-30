@@ -21,7 +21,6 @@
 
 #include "host.h"
 #include "sys.h"
-#include <SDL_main.h>
 
 #ifdef CHOCOLATE_QUAKE_PS3
 #include <unistd.h>

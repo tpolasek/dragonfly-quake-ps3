@@ -27,11 +27,12 @@
 #include "input.h"
 #include "keys.h"
 #include "menu.h"
+#ifndef CHOCOLATE_QUAKE_PS3
 #include <SDL_events.h>
 #include <SDL_filesystem.h>
 #include <SDL_hints.h>
-#include <SDL_stdinc.h>
 #include <SDL_timer.h>
+#endif
 #include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
@@ -43,6 +44,7 @@
 // and the "Quit Game" XMB command so the OS doesn't yank the rug out from
 // under us mid-frame.
 #include <sysutil/sysutil.h>
+#include <lv2/systime.h>
 
 // Forward declarations -- the helpers themselves live further down but
 // Sys_Error / Sys_Quit reference them.
@@ -168,10 +170,15 @@ SYSTEM IO
 */
 
 static void Sys_ShowErrorModal(const char* msg) {
+#ifdef CHOCOLATE_QUAKE_PS3
+    fprintf(stdout, "ERROR: %s\n", msg);
+    Sys_FlushLog();
+#else
     u32 flags = SDL_MESSAGEBOX_ERROR;
     const char* title = PACKAGE_STRING;
     SDL_Window* window = NULL;
     SDL_ShowSimpleMessageBox(flags, title, msg, window);
+#endif
 }
 
 void Sys_Error(char* error, ...) {
@@ -209,27 +216,35 @@ void Sys_Quit(void) {
     Host_Shutdown();
 #ifdef CHOCOLATE_QUAKE_PS3
     Sys_FlushLog();
-#endif
+#else
     ES_DisplayScreen();
+#endif
     exit(0);
 }
 
 double Sys_FloatTime() {
+#ifdef CHOCOLATE_QUAKE_PS3
+    static double start_time = 0.0;
+    if (start_time == 0.0) {
+        // sysGetSystemTime returns microseconds since some epoch
+        start_time = (double) sysGetSystemTime() / 1000000.0;
+        return 0.0;
+    }
+    double now = (double) sysGetSystemTime() / 1000000.0;
+    return now - start_time;
+#else
     static double frequency = 0.0;
     static u64 start_time = 0;
 
     if (start_time == 0) {
         frequency = (double) SDL_GetPerformanceFrequency();
         start_time = SDL_GetPerformanceCounter();
-        SYS_TRACE("Sys_FloatTime: first call freq=%llu start=%llu -> %.6f\n",
-                  (unsigned long long) frequency,
-                  (unsigned long long) start_time,
-                  (double) start_time / frequency);
         return (double) start_time / frequency;
     }
     u64 now = SDL_GetPerformanceCounter();
     double time_diff = (double) (now - start_time);
     return time_diff / frequency;
+#endif
 }
 
 char* Sys_ConsoleInput(void) {
@@ -256,6 +271,10 @@ static void Sys_QuitEvent(void) {
 }
 
 void Sys_SendKeyEvents() {
+#ifdef CHOCOLATE_QUAKE_PS3
+    // Pad polling is all we need on PS3 (no keyboard/mouse).
+    IN_PollGamepad();
+#else
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
@@ -268,10 +287,6 @@ void Sys_SendKeyEvents() {
             case SDL_MOUSEWHEEL:
                 IN_MouseEvent(&event);
                 break;
-#ifndef CHOCOLATE_QUAKE_PS3
-            // PS3 polls the DualShock 3 directly via PSL1GHT (see
-            // IN_PollGamepad below) -- SDL_GameController never produces
-            // useful events there.
             case SDL_CONTROLLERDEVICEADDED:
             case SDL_CONTROLLERDEVICEREMOVED:
             case SDL_CONTROLLERBUTTONDOWN:
@@ -279,7 +294,6 @@ void Sys_SendKeyEvents() {
             case SDL_CONTROLLERAXISMOTION:
                 IN_GamepadEvent(&event);
                 break;
-#endif
             case SDL_QUIT:
                 Sys_QuitEvent();
                 break;
@@ -287,11 +301,6 @@ void Sys_SendKeyEvents() {
                 break;
         }
     }
-#ifdef CHOCOLATE_QUAKE_PS3
-    // Pump the DualShock 3 every frame. SDL_PollEvent above still runs so
-    // we catch SDL_QUIT and any future SDL-side events, but on PS3 the pad
-    // has its own (lower-latency) path through PSL1GHT's io/pad.h.
-    IN_PollGamepad();
 #endif
 }
 
@@ -336,8 +345,10 @@ static void Sys_SigHook(int sig) {
 #endif
 
 static void Sys_SigInit(void) {
+#ifndef CHOCOLATE_QUAKE_PS3
     // Disable SDL default signal handlers
     SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");
+#endif
     Sys_SigHook(SIGINT);
     Sys_SigHook(SIGTERM);
 }

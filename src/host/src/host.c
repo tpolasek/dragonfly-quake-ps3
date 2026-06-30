@@ -38,7 +38,9 @@
 #include "sys.h"
 #include "view.h"
 #include "wad.h"
+#ifndef CHOCOLATE_QUAKE_PS3
 #include <SDL.h>
+#endif
 #include <stdarg.h>
 #include <string.h>
 
@@ -815,9 +817,11 @@ void Host_InitVCR(quakeparms_t* parms) {
 }
 
 void Host_InitTimer() {
+#ifndef CHOCOLATE_QUAKE_PS3
     if (SDL_Init(SDL_INIT_TIMER) < 0) {
         Sys_Error("Failed to initialize timer: %s\n", SDL_GetError());
     }
+#endif
 }
 
 /*
@@ -930,7 +934,9 @@ void Host_Init(quakeparms_t* parms) {
 }
 
 void Host_ShutdownTimer() {
+#ifndef CHOCOLATE_QUAKE_PS3
     SDL_QuitSubSystem(SDL_INIT_TIMER);
+#endif
 }
 
 /*
@@ -965,5 +971,7 @@ void Host_Shutdown() {
         VID_Shutdown();
     }
 
+#ifndef CHOCOLATE_QUAKE_PS3
     SDL_Quit();
+#endif
 }
