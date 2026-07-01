@@ -1,4 +1,4 @@
-# CMake toolchain file for building Chocolate Quake for PlayStation 3 (PSL1GHT).
+# CMake toolchain file for building Dragonfly Quake for PlayStation 3 (PSL1GHT).
 #
 # Targets the PPU (PowerPC 64-bit, powerpc64-ps3-elf) using the ps3dev
 # toolchain (ppu-gcc). Expects the hldtux/ps3dev-sdl2 docker image (or an
@@ -36,4 +36,4 @@ set(CMAKE_C_COMPILER_WORKS ON)
 set(CMAKE_C_PLATFORM_HAS_FPU ON)
 
 # Project-side flag used to switch to PS3-specific deps (e.g. the PS3 net stub).
-set(CHOCOLATE_QUAKE_PS3 ON CACHE BOOL "Building for PS3 (PPU/PSL1GHT)" FORCE)
+set(DRAGONFLY_QUAKE_PS3 ON CACHE BOOL "Building for PS3 (PPU/PSL1GHT)" FORCE)

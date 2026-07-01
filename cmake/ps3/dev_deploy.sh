@@ -26,7 +26,7 @@ PS3_FTP_USER="${PS3_FTP_USER:-anonymous}"
 PS3_FTP_PASS="${PS3_FTP_PASS:-}"
 PS3_INSTALL_DIR="${PS3_INSTALL_DIR:-/dev_hdd0/game/CHQK00001/USRDIR}"
 CONTENT_ID="${CONTENT_ID:-UP0000-CHQK00001_00-0000000000000001}"
-LOCAL_ELF="${LOCAL_ELF:-build-ps3/src/chocolate-quake}"
+LOCAL_ELF="${LOCAL_ELF:-build-ps3/src/dragonfly-quake}"
 PS3DEV="${PS3DEV:-/usr/local/ps3dev}"
 
 # Put the ps3dev compilers + host signing tools on PATH.

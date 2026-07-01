@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Packages the chocolate-quake PS3 (PPU) executable into an installable
+# Packages the dragonfly-quake PS3 (PPU) executable into an installable
 # .pkg, bundling the Quake 1 id1/ data files alongside EBOOT.BIN.
 #
 # Run this from the host with the ps3dev tools (ppu-strip, sprxlinker,
@@ -11,21 +11,21 @@
 # Usage:
 #   cmake/ps3/make_pkg.sh <elf> <id1_dir> <out_pkg>
 #
-#   <elf>      chocolate-quake PS3 executable (ELF, PowerPC)
+#   <elf>      dragonfly-quake PS3 executable (ELF, PowerPC)
 #   <id1_dir>  directory containing pak0.pak / pak1.pak
 #   <out_pkg>  output .pkg path
 #
-# Defaults match the chocolate-quake layout.
+# Defaults match the dragonfly-quake layout.
 
 set -euo pipefail
 
-ELF="${1:-build-ps3/src/chocolate-quake}"
+ELF="${1:-build-ps3/src/dragonfly-quake}"
 ID1_DIR="${2:-/host-id1}"
-OUT_PKG="${3:-chocolate-quake.pkg}"
+OUT_PKG="${3:-dragonfly-quake.pkg}"
 
 # Title metadata. CONTENT_ID format: 2-char flag + 4 hex + '-' + 9-char
 # TITLE_ID + "_00-" + 16 hex.
-TITLE="Chocolate Quake"
+TITLE="Dragonfly Quake"
 TITLE_ID="CHQK00001"
 APP_VER="01.00"
 CONTENT_ID="UP0000-${TITLE_ID}_00-0000000000000001"
@@ -39,13 +39,13 @@ echo "[1/6] Verifying inputs"
 [ -f "${ELF}" ] || { echo "missing ELF: ${ELF}" >&2; exit 1; }
 [ -f "${ID1_DIR}/pak0.pak" ] || { echo "missing pak0.pak in ${ID1_DIR}" >&2; exit 1; }
 
-echo "[2/6] Stripping + sprxlinker -> ${WORK}/chocolate-quake.elf"
+echo "[2/6] Stripping + sprxlinker -> ${WORK}/dragonfly-quake.elf"
 cp "${ELF}" "${WORK}/cq.raw"
-ppu-strip -o "${WORK}/chocolate-quake.elf" "${WORK}/cq.raw"
-sprxlinker "${WORK}/chocolate-quake.elf"
+ppu-strip -o "${WORK}/dragonfly-quake.elf" "${WORK}/cq.raw"
+sprxlinker "${WORK}/dragonfly-quake.elf"
 
 echo "[3/6] make_self_npdrm -> pkg/USRDIR/EBOOT.BIN"
-make_self_npdrm "${WORK}/chocolate-quake.elf" "${USRDIR}/EBOOT.BIN" "${CONTENT_ID}"
+make_self_npdrm "${WORK}/dragonfly-quake.elf" "${USRDIR}/EBOOT.BIN" "${CONTENT_ID}"
 
 echo "[4/6] Copying id1/ data into pkg/USRDIR/id1"
 mkdir -p "${USRDIR}/id1"

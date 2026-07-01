@@ -1,6 +1,6 @@
-# Building `chocolate-quake.pkg` for PS3
+# Building `dragonfly-quake.pkg` for PS3
 
-This produces an installable PS3 package (.pkg) from the chocolate-quake
+This produces an installable PS3 package (.pkg) from the dragonfly-quake
 source, cross-compiling for the PS3's PPU (PowerPC 64-bit) using a local
 PSL1GHT/ps3dev toolchain. Tested with CFW PS3 consoles and RPCS3.
 
@@ -25,7 +25,7 @@ cmake -S . -B build-ps3 \
 cmake --build build-ps3 -j"$(nproc)"
 ```
 
-This produces `build-ps3/src/chocolate-quake` — an ELF 64-bit MSB
+This produces `build-ps3/src/dragonfly-quake` — an ELF 64-bit MSB
 PowerPC executable, statically linked.
 
 For incremental rebuilds after the first configure:
@@ -40,26 +40,26 @@ Run the packaging script, pointing it at the ELF and the Quake `id1/`
 data directory:
 
 ```bash
-bash cmake/ps3/make_pkg.sh build-ps3/src/chocolate-quake /path/to/id1 chocolate-quake.pkg
+bash cmake/ps3/make_pkg.sh build-ps3/src/dragonfly-quake /path/to/id1 dragonfly-quake.pkg
 ```
 
 Defaults (override by passing positional args to `make_pkg.sh`):
-- ELF input: `build-ps3/src/chocolate-quake`
+- ELF input: `build-ps3/src/dragonfly-quake`
 - id1 source: `/host-id1`
-- Output: `chocolate-quake.pkg`
+- Output: `dragonfly-quake.pkg`
 
 The script:
 1. `ppu-strip` + `sprxlinker` on the ELF
 2. `make_self_npdrm` -> `pkg/USRDIR/EBOOT.BIN`
 3. Copies the `id1/` data into `pkg/USRDIR/id1/`
 4. Generates `PARAM.SFO` from the ps3dev `sfo.xml` template
-5. `pkg.py` -> final `chocolate-quake.pkg`
+5. `pkg.py` -> final `dragonfly-quake.pkg`
 
 ### Package metadata
 
 | Field        | Value                                   |
 |--------------|-----------------------------------------|
-| Title        | Chocolate Quake                         |
+| Title        | Dragonfly Quake                         |
 | Title ID     | CHQK00001                               |
 | App version  | 01.00                                   |
 | Content ID   | UP0000-CHQK00001_00-0000000000000001    |
@@ -70,7 +70,7 @@ top of `cmake/ps3/make_pkg.sh`.
 ## 3. Install / test
 
 - **RPCS3**: `File → Install Packages/RAPs/Activators → Install Packages`
-  and select `chocolate-quake.pkg`.
+  and select `dragonfly-quake.pkg`.
 - **PS3 (CFW)**: copy the .pkg to `/dev_hdd0/pkg/` and install from the XMB
   package manager.
 

@@ -1,7 +1,7 @@
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 cmake_minimum_required(VERSION 3.21.0)
-project("Chocolate Quake" VERSION 2.1.0 LANGUAGES C)
+project("Dragonfly Quake" VERSION 2.1.0 LANGUAGES C)
 set(CMAKE_C_STANDARD 99)
 
 # C89's implicit-function-declaration fallback has caused real ABI-truncation
@@ -15,7 +15,7 @@ add_compile_options(
 
 string(TIMESTAMP CURRENT_YEAR "%Y")
 set(PACKAGE_NAME ${PROJECT_NAME})
-set(PACKAGE_TARNAME "chocolate-quake")
+set(PACKAGE_TARNAME "dragonfly-quake")
 set(PACKAGE_VERSION ${PROJECT_VERSION})
 set(PACKAGE_STRING "${PROJECT_NAME} ${PROJECT_VERSION}")
 set(PACKAGE_COPYRIGHT "Copyright (C) 1996-${CURRENT_YEAR}")
@@ -28,12 +28,12 @@ if(MATH)
     link_libraries(${MATH})
 endif()
 
-if(CHOCOLATE_QUAKE_PS3)
+if(DRAGONFLY_QUAKE_PS3)
 	# PS3 (PPU/PSL1GHT) path: native PSL1GHT APIs.
 	#
-	# Expose CHOCOLATE_QUAKE_PS3 to source so platform branches (e.g.
+	# Expose DRAGONFLY_QUAKE_PS3 to source so platform branches (e.g.
 	# Sys_GetDefaultBaseDir in src/sys) can pick the PS3 layout.
-	add_compile_definitions(CHOCOLATE_QUAKE_PS3=1)
+	add_compile_definitions(DRAGONFLY_QUAKE_PS3=1)
 
 	# PSL1GHT SDK headers (sysutil/sysutil.h, rsx/*.h, audio/audio.h,
 	# io/pad.h, etc.) live in ppu/include; codec headers (vorbis/vorbisfile.h,
@@ -72,7 +72,7 @@ configure_file(config.h.in config.h)
 add_subdirectory("src")
 
 if (UNIX AND NOT APPLE)
-	install(FILES ${CMAKE_BINARY_DIR}/src/chocolate-quake
+	install(FILES ${CMAKE_BINARY_DIR}/src/${PACKAGE_TARNAME}
 		DESTINATION bin
 		PERMISSIONS WORLD_READ WORLD_EXECUTE GROUP_READ GROUP_EXECUTE OWNER_READ OWNER_WRITE OWNER_EXECUTE)
 	install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dist/linux/${APPSTREAM_APP_ID}.svg

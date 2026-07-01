@@ -1,6 +1,6 @@
-# Chocolate Quake
+# Dragonfly Quake
 
-Chocolate Quake is a faithful source port of Quake 1 (DOS version) that preserves the
+Dragonfly Quake is a faithful source port of Quake 1 (DOS version) that preserves the
 original software renderer at its original 320x200 resolution. The port targets PS3
 homebrew exclusively (PSL1GHT/PS3DEV toolchain, powerpc64-ps3-elf target) and talks to
 the hardware through native PSL1GHT APIs -- RSX for video, libaudio for sound, the pad
@@ -10,7 +10,7 @@ API for input, and `sysGetSystemTime` for the frame clock. The earlier desktop
 ## Source layout
 
 Each Quake subsystem is its own static library under `src/<sub>/{src,include}/`. The
-top-level `src/CMakeLists.txt` aggregates them into the `chocolate-quake` executable.
+top-level `src/CMakeLists.txt` aggregates them into the `dragonfly-quake` executable.
 Key subsystems: `host` (frame loop, `Host_Init`/`Host_Frame`), `common` (filesystem,
 pak loading, byte swap), `sys` (PS3 logger, sysutil callback, `Sys_Error`/`Sys_Printf`),
 `renderer` (software rasterizer), `camera` (view setup), `screen` (SCR_UpdateScreen),
@@ -38,7 +38,7 @@ cmake -S . -B build-ps3 -G "Unix Makefiles" \
 cmake --build build-ps3 -j"$(nproc)"
 
 # Package a full installable .pkg (bundles id1/ + EBOOT.BIN):
-bash cmake/ps3/make_pkg.sh build-ps3/src/chocolate-quake <path-to-id1> chocolate-quake.pkg
+bash cmake/ps3/make_pkg.sh build-ps3/src/dragonfly-quake <path-to-id1> dragonfly-quake.pkg
 ```
 
 Env vars for `dev_deploy.sh` (all optional, defaults shown):
@@ -56,7 +56,7 @@ The PS3 build redirects stdout to a log file next to EBOOT.BIN. Fetch it via FTP
 
 ```bash
 curl -s --max-time 20 \
-    'ftp://192.168.1.245/dev_hdd0/game/CHQK00001/USRDIR/chocolate-quake.log' \
+    'ftp://192.168.1.245/dev_hdd0/game/CHQK00001/USRDIR/dragonfly-quake.log' \
     --user 'anonymous:'
 ```
 

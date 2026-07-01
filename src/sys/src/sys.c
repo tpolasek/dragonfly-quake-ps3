@@ -294,7 +294,7 @@ static void Sys_SigInit(void) {
 // EBOOT.BIN so we can FTP it back and see where the game died. Opened at
 // the very start of Sys_Init; everything that goes through printf /
 // Sys_Printf / Sys_Error lands here.
-#define PS3_LOG_PATH "/dev_hdd0/game/CHQK00001/USRDIR/chocolate-quake.log"
+#define PS3_LOG_PATH "/dev_hdd0/game/CHQK00001/USRDIR/dragonfly-quake.log"
 
 static void Sys_OpenLog(void) {
     // PS3 newlib has no dup2, so we redirect stdout to the log file via
@@ -311,7 +311,7 @@ static void Sys_OpenLog(void) {
     // Line-buffered so partial lines flush at every newline; if the game
     // hard-crashes mid-line we still get the previous lines.
     setvbuf(stdout, NULL, _IOLBF, 0);
-    fprintf(stdout, "=== chocolate-quake PS3 log start ===\n");
+    fprintf(stdout, "=== dragonfly-quake PS3 log start ===\n");
 }
 
 static void Sys_FlushLog(void) {

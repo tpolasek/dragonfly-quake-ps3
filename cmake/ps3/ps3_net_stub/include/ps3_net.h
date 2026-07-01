@@ -6,7 +6,7 @@
  *
  * The ps3dev image ships no usable networking library for this target, and
  * networking is not supported in this PS3 port. This header declares just
- * enough of a UDP socket/packet API that chocolate-quake's net module
+ * enough of a UDP socket/packet API that dragonfly-quake's net module
  * compiles; the corresponding .c file provides no-op stubs so the link
  * succeeds and the binary loads, with the network driver reporting failure
  * at runtime as expected by the rest of the engine.

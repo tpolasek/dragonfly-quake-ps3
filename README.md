@@ -1,137 +1,92 @@
-# Chocolate Quake
+# Dragonfly Quake (PS3 Quake I Port)
 
-Chocolate Quake is a minimalist source port of Quake focused on preserving the
-original experience of version 1.09 and earlier DOS releases. Inspired by the
-philosophy of Chocolate Doom, this project aims for accuracy and authenticity
-over modern enhancements.
+Dragonfly Quake is a faithful source port of Quake 1 (the original DOS release)
+for **PlayStation 3 homebrew**. Inspired by Chocolate Doom, it preserves the
+original software renderer at its native 320×200 resolution — no hardware
+acceleration, no visual enhancements, just Quake as it was.
 
-Chocolate Quake's aims are:
+It targets the PS3 exclusively through native PSL1GHT APIs: RSX for video,
+libaudio for sound, the pad API for input, and `sysGetSystemTime` for the frame
+clock. Input is gamepad-only; networking is stubbed, so single-player and demo
+playback work but LAN/online play does not.
 
-* Reproduces the behavior of Quake v1.09 (WinQuake) and earlier DOS versions
-  with high accuracy, including original bugs and quirks.
-* Input handling, rendering, and timing are designed to closely match the
-  original experience.
-* No hardware acceleration or modern visual effects.
+> The legacy Windows / macOS / Linux desktop build is no longer supported.
 
-# Philosophy
+## Philosophy
 
-This port is for purists: no fancy enhancements, no modern effects, just Quake
-as it was. If you're looking for visual upgrades or modern features, this may
-not be the port for you. But if you want Quake exactly as it felt in the '90s,
-you're in the right place.
-
-# Build Instructions
-
-Chocolate Quake uses CMake (>= 3.21) and is built as a C99 project.
-Predefined CMake presets are provided to simplify building across platforms.
-
-The repository includes vcpkg as a Git submodule, which is the recommended way
-to build Chocolate Quake on Windows and macOS.
+A port for purists: accurate behavior, original bugs and quirks included, the
+original feel of Quake v1.09. If you want modern features or visual upgrades,
+this isn't it.
 
 ## Requirements
 
-* C compiler with C99 support
-* CMake 3.21 or newer
-* Ninja (recommended)
-* Git
-* Audio libraries:
-    * libvorbis + libvorbisfile
-    * libflac
-    * libmad (MP3)
+- A local **ps3dev (PSL1GHT)** install at `$PS3DEV` providing:
+  - the `ppu-gcc` / `ppu-g++` compilers,
+  - the PSL1GHT SDK and codec portlibs (vorbis, ogg, mad, FLAC),
+  - host signing/packaging tools (`ppu-strip`, `sprxlinker`, `make_self_npdrm`,
+    `sfo.py`, `pkg.py`).
+- CMake 3.21+ and `make`.
+- The Quake 1 data files: an `id1/` directory containing `pak0.pak` and
+  `pak1.pak` (from a registered Quake 1 install).
+- To deploy over the network: `curl` and an FTP-enabled PS3 on your LAN. To run
+  the packaged build: a CFW PS3 or [RPCS3](https://rpcs3.net).
 
-## Cloning the repository
+## Build
 
-If you are not using vcpkg:
-> git clone https://github.com/Henrique194/chocolate-quake.git
+Put the ps3dev tools on your PATH, then configure and build from the repo root:
 
-If you plan to use vcpkg to manage dependencies:
-> git clone --recurse-submodules https://github.com/Henrique194/chocolate-quake.git
+```bash
+export PATH="$PS3DEV/ppu/bin:$PS3DEV/bin:$PATH"
 
-If you already cloned the repository without submodules and want to fetch
-vcpkg later:
-> git submodule update --init --recursive
+cmake -S . -B build-ps3 -G "Unix Makefiles" \
+      -DCMAKE_TOOLCHAIN_FILE=cmake/ps3.toolchain.cmake
+cmake --build build-ps3 -j"$(nproc)"
+```
 
-## Windows and macOS (using bundled vcpkg)
+This produces `build-ps3/src/dragonfly-quake` — a statically-linked 64-bit
+PowerPC ELF.
 
-The project provides CMake presets to build with vcpkg.
-From the repository root:
-> cmake --preset release-vcpkg
->
-> cmake --build --preset release-vcpkg
+## Fast iteration (hotswap EBOOT.BIN over FTP)
 
-For a debug build:
-> cmake --preset debug-vcpkg
->
-> cmake --build --preset debug-vcpkg
+After the first full build, you can rebuild, re-sign, and upload just the
+executable to a running PS3 without repackaging:
 
-## Linux
+```bash
+bash cmake/ps3/dev_deploy.sh
+```
 
-On Linux, Chocolate Quake is typically built against system-provided libraries.
+Defaults (override via env vars): `PS3_FTP_HOST=192.168.1.245`,
+`PS3_FTP_USER=anonymous`, `PS3_FTP_PASS=`,
+`PS3_INSTALL_DIR=/dev_hdd0/game/CHQK00001/USRDIR`.
 
-Install the required dependencies using your distribution's package manager,
-then build using the provided presets:
-> cmake --preset release
->
-> cmake --build --preset release
+## Package an installable .pkg
 
-For a debug build:
-> cmake --preset debug
->
-> cmake --build --preset debug
+Bundle the executable with your `id1/` data into a `.pkg`:
 
-## Build output
+```bash
+bash cmake/ps3/make_pkg.sh build-ps3/src/dragonfly-quake /path/to/id1 dragonfly-quake.pkg
+```
 
-Once compilation is complete, the resulting executable can be found at:
-- **Release build**: `cmake-build-release/src/Release`
-- **Debug build**: `cmake-build-debug/src/Debug`
+## Running
 
-# Running The Game
+- **RPCS3**: `File → Install Packages/RAPs/Activators → Install Packages`, then
+  select `dragonfly-quake.pkg`.
+- **PS3 (CFW)**: copy the `.pkg` to `/dev_hdd0/pkg/` and install it from the XMB
+  package manager.
 
-To run Chocolate Quake, you need a directory named `id1` containing your
-game data (PAK files). You can also customize the location and name of the
-game directory using the command-line parameters (`-basedir` and `-game`,
-respectively). Most IDEs also allow you to set a working directory so the
-game directory can be placed in a more convenient location, without the
-need for command-line parameters.
+On the console the game reads its data from
+`/dev_hdd0/game/CHQK00001/USRDIR` — that's where `make_pkg.sh` installs `id1/`
+next to `EBOOT.BIN`.
 
-By default, Chocolate Quake searches for the `id1` directory in the following
-location:
-* Windows: The same directory as the executable.
-* macOS: `/Users/<your-user>/Library/Application Support/chocolate-quake`
-* Linux: `/home/<your-user>/.local/share/chocolate-quake`
+## Credits
 
-## Music
-
-Chocolate Quake supports external music playback in MP3, OGG, FLAC and WAV
-formats. To enable it:
-
-* Create a directory named `music` inside your `id1` game folder.
-* Place your music tracks in this directory.
-
-Tracks should follow the naming convention track02.ogg through track11.ogg,
-matching the original CD audio.
-
-# Supported Platforms
-
-| Platform | is supported? |
-|:--------:|:-------------:|
-| Windows  |      yes      |
-|  Linux   |      yes      |
-|  MacOS   |      yes      |
-
-# Credits
-
-Chocolate Quake builds upon the work of the Quake community and open-source
+Dragonfly Quake builds on the work of the Quake community and open-source
 contributors. Special thanks to:
 
-* [QuakeSpasm Spiked](https://github.com/Shpoike/Quakespasm) - Portions of the
-  sound and input subsystems are adapted from QuakeSpasm Spiked. Thanks to the
-  authors for their solid groundwork.
-* [@arrowgent](https://github.com/arrowgent) - For thorough Linux testing and
-  valuable bug reports.
-* The Chocolate Quake icon is based on graphics from the [EmojiTwo](https://github.com/EmojiTwo/emojitwo)
-  project, licensed under [Creative Commons Attribution International 4.0 (CC-BY-4.0)](https://creativecommons.org/licenses/by/4.0/),
-  with modifications made by [@fpiesche](https://github.com/fpiesche).
-
-Additional thanks to the broader Quake modding and source port community for
-maintaining an ecosystem that made this project possible.
+- [QuakeSpasm Spiked](https://github.com/Shpoike/Quakespasm) — portions of the
+  sound and input subsystems are adapted from it.
+- [@arrowgent](https://github.com/arrowgent) — thorough testing and bug reports.
+- The Dragonfly Quake icon is based on graphics from the
+  [EmojiTwo](https://github.com/EmojiTwo/emojitwo) project, licensed under
+  [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/), with modifications
+  by [@fpiesche](https://github.com/fpiesche).
