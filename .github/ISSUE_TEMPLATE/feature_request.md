@@ -3,7 +3,7 @@ name: Feature request
 about: Propose a new feature!
 title: ''
 labels: enhancement
-assignees: Henrique194
+assignees: tpolasek
 
 ---
 

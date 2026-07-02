@@ -3,7 +3,7 @@ name: Code Quality
 about: Help us reduce tech debt and write better code!
 title: ''
 labels: code-quality
-assignees: Henrique194
+assignees: tpolasek
 
 ---
 
