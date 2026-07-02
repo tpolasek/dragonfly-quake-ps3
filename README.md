@@ -3,7 +3,7 @@
 
 
 Dragonfly Quake is a faithful source port of Quake 1 (the original DOS release)
-for **PlayStation 3 homebrew**. Inspired by Chocolate Doom, it preserves the
+for **PlayStation 3 homebrew**. Inspired by DOS Quake, it preserves the
 original software renderer at its native 320×200 resolution — no hardware
 acceleration, no visual enhancements, just Quake as it was.
 
